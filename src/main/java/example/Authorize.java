@@ -5,9 +5,9 @@ import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.PasswordTextField;
 import org.apache.wicket.markup.html.form.TextField;
-import org.apache.wicket.PageParameters;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.protocol.http.WebSession;
+import org.apache.wicket.request.mapper.parameter.PageParameters;
 
 /**
  * Authorize allows viewers to log in as a user or create
@@ -19,25 +19,27 @@ public class Authorize extends Base {
 
     public Authorize(final PageParameters parameters) {
         super(parameters);
-        login = parameters.getAsBoolean("login",true);
-        register = parameters.getAsBoolean("register");
+        login = parameters.get("login").toBoolean(true);
+        register = parameters.get("register").toBoolean();
         TwissSession s = (TwissSession) WebSession.get();
+
+        setup();
         if (s.getUname() != null) {
             //User is logged in. Log them out and redirect to home page.
             s.authorize(null);
-            setRedirect(true);
+            //setRedirect(true);
             setResponsePage(getPage().getClass());
         }
-        else {
-            //Make and define a LoginForm.
-            LoginForm l = new LoginForm("login");
-            l.add(new Label("loginerror",loginErrorMsg()));
-            add(l);
-            //Make and define a RegisterForm. Same as above.
-            RegisterForm r = new RegisterForm("signup");
-            r.add(new Label("regerror",registerErrorMsg()));
-            add(r);
-        }
+    }
+
+    private void setup() {
+        LoginForm l = new LoginForm("login");
+        l.add(new Label("loginerror",loginErrorMsg()));
+        add(l);
+        //Make and define a RegisterForm. Same as above.
+        RegisterForm r = new RegisterForm("signup");
+        r.add(new Label("regerror",registerErrorMsg()));
+        add(r);
     }
 
     private String loginErrorMsg() {

@@ -1,7 +1,7 @@
 package example;
 
-import org.apache.wicket.Request;
 import org.apache.wicket.protocol.http.WebSession;
+import org.apache.wicket.request.Request;
 
 public class TwissSession extends WebSession {
     private String uname;

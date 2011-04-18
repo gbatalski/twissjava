@@ -1,12 +1,7 @@
 package example;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 import example.models.Timeline;
 import example.models.Tweet;
-import org.apache.wicket.PageParameters;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Form;
@@ -16,7 +11,11 @@ import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.protocol.http.WebSession;
-import org.wyki.cassandra.pelops.UuidHelper;
+import org.apache.wicket.request.mapper.parameter.PageParameters;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 /**
  * This is the typical twitter page. A form for submitting a 140-character
@@ -29,14 +28,16 @@ public class Userline extends HomePage {
 
     public Userline(final PageParameters parameters) {
         super(parameters);
-        nextpage = parameters.getAsLong("nextpage");
+        nextpage = parameters.get("nextpage").toLong(0);
         username = ((TwissSession) WebSession.get()).getUname();
+        setup();
         if (username == null) {
-            setRedirect(true);
+            //setRedirect(true);
+
             setResponsePage(Publicline.class);
         }
         else {
-            setup();
+            //setup();
         }
     }
 
@@ -44,7 +45,14 @@ public class Userline extends HomePage {
         add(new TweetForm("poster"));
 
         Timeline timeline = getTimeline(username, nextpage);
-        List<Tweet> tweets = timeline.getView();
+        List<Tweet> tweets;//timeline.getView();
+
+        if (null == timeline) {
+            tweets = new ArrayList<Tweet>(0);
+        } else {
+            tweets = timeline.getView();
+        }
+
         if (tweets.size() > 0) {
             add(new ListView<Tweet>("tweetlist", tweets) {
                 @Override
@@ -53,7 +61,7 @@ public class Userline extends HomePage {
                         @Override
                         public void onClick() {
                             PageParameters p = new PageParameters();
-                            p.put("username", listitem.getModel().getObject().getUname());
+                            p.add("username", listitem.getModel().getObject().getUname());
                             setResponsePage(Publicline.class, p);
                         }
                     }.add(new Label("tuname",listitem.getModel().getObject().getUname())));
@@ -107,7 +115,7 @@ public class Userline extends HomePage {
         @Override
         public void onSubmit() {
             PageParameters p = new PageParameters();
-            p.put("nextpage", nextpage);
+            p.add("nextpage", nextpage);
             setResponsePage(getPage().getClass(), p);
         }
     }
@@ -121,7 +129,7 @@ public class Userline extends HomePage {
         }
         @Override
         public void onSubmit() {
-            saveTweet(new Tweet(UuidHelper.newTimeUuid().toString().getBytes(), username, tweetbody));
+            saveTweet(new Tweet(UUID.randomUUID().toString().getBytes(), username, tweetbody));
             setResponsePage(getPage().getClass());
         }
     }

@@ -1,9 +1,7 @@
 package example;
 
-import org.apache.wicket.PageParameters;
-import org.apache.wicket.markup.html.CSSPackageResource;
 
-import org.apache.wicket.markup.html.WebPage;
+import org.apache.wicket.request.mapper.parameter.PageParameters;
 
 /**
  * This page points to either Publicline (if viewer is not logged in) or

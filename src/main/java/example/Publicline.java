@@ -1,21 +1,17 @@
 package example;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 import example.models.Timeline;
 import example.models.Tweet;
-import org.apache.wicket.PageParameters;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Form;
-import org.apache.wicket.markup.html.form.TextArea;
 import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
-import org.apache.wicket.model.PropertyModel;
-import org.wyki.cassandra.pelops.UuidHelper;
+import org.apache.wicket.request.mapper.parameter.PageParameters;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This is the default home page when not logged in.
@@ -27,8 +23,8 @@ public class Publicline extends HomePage {
 
     public Publicline(final PageParameters parameters) {
         super(parameters);
-        nextpage = parameters.getAsLong("nextpage");
-        username = parameters.getString("username");
+        nextpage = parameters.get("nextpage").toLong(0);
+        username = parameters.get("username").toString();
         if (username == null) {
             username = "!PUBLIC!";
             add(new Label("h2name", "Public"));
@@ -38,7 +34,14 @@ public class Publicline extends HomePage {
         }
 
         Timeline timeline = getUserline(username, nextpage);
-        List<Tweet> tweets = timeline.getView();
+
+        List<Tweet> tweets;
+        if (timeline == null) {
+            tweets = new ArrayList<Tweet>(0);
+        } else {
+            tweets = timeline.getView();
+        }
+
         if (tweets.size() > 0) {
             add(new ListView<Tweet>("tweetlist", tweets) {
                 @Override
@@ -47,7 +50,7 @@ public class Publicline extends HomePage {
                         @Override
                         public void onClick() {
                             PageParameters p = new PageParameters();
-                            p.put("username", listitem.getModel().getObject().getUname());
+                            p.add("username", listitem.getModel().getObject().getUname());
                             setResponsePage(Publicline.class, p);
                         }
                     }.add(new Label("tuname",listitem.getModel().getObject().getUname())));
@@ -101,7 +104,7 @@ public class Publicline extends HomePage {
         @Override
         public void onSubmit() {
             PageParameters p = new PageParameters();
-            p.put("nextpage", nextpage);
+            p.add("nextpage", nextpage);
             setResponsePage(getPage().getClass(), p);
         }
     }

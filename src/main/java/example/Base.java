@@ -1,30 +1,20 @@
 package example;
 
-import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
-import java.util.*;
-
 import example.models.Timeline;
 import example.models.Tweet;
 import example.models.User;
-import org.apache.cassandra.thrift.KeyRange;
-import org.apache.cassandra.thrift.SlicePredicate;
 import org.apache.cassandra.thrift.ConsistencyLevel;
-import org.apache.cassandra.thrift.Column;
-
-import org.apache.wicket.PageParameters;
-import org.apache.wicket.markup.html.CSSPackageResource;
+import org.apache.wicket.markup.html.IHeaderResponse;
 import org.apache.wicket.markup.html.WebPage;
-
+import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.protocol.http.WebSession;
-import org.wyki.cassandra.pelops.Mutator;
-import org.wyki.cassandra.pelops.NumberHelper;
-import org.wyki.cassandra.pelops.Pelops;
-import org.wyki.cassandra.pelops.Selector;
-
+import org.apache.wicket.request.mapper.parameter.PageParameters;
+import org.apache.wicket.request.resource.PackageResourceReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.wicket.markup.html.basic.Label;
+
+import java.nio.charset.Charset;
+import java.util.List;
 
 /**
  * Base contains both the default header/footer things for the UI as
@@ -38,20 +28,23 @@ public abstract class Base extends WebPage {
     final ConsistencyLevel RCL = ConsistencyLevel.ONE;
 
     //Column Family names
-    final static String USERS = "User";
-    final static String FRIENDS = "Friends";
-    final static String FOLLOWERS = "Followers";
-    final static String TWEETS = "Tweet";
-    final static String TIMELINE = "Timeline";
-    final static String USERLINE = "Userline";
+    public final static String USERS = "User";
+    public final static String FRIENDS = "Friends";
+    public final static String FOLLOWERS = "Followers";
+    public final static String TWEETS = "Tweet";
+    public final static String TIMELINE = "Timeline";
+    public final static String USERLINE = "Userline";
+
+    public static CassandraService cassandra;
 
     //UI settings
     public Base(final PageParameters parameters) {
-        add(CSSPackageResource.getHeaderContribution(Base.class, "960.css"));
+
+        /*add(CSSPackageResource.getHeaderContribution(Base.class, "960.css"));
         add(CSSPackageResource.getHeaderContribution(Base.class, "reset.css"));
         add(CSSPackageResource.getHeaderContribution(Base.class, "screen.css"));
-        add(CSSPackageResource.getHeaderContribution(Base.class, "text.css"));
-        
+        add(CSSPackageResource.getHeaderContribution(Base.class, "text.css"));*/
+
         String condauth = "Log";
         String username = ((TwissSession)WebSession.get()).getUname();
         if (username == null) {
@@ -63,6 +56,18 @@ public abstract class Base extends WebPage {
         add(new Label("loginout", condauth));
     }
 
+    @Override
+    public void renderHead(IHeaderResponse response) {
+        response.renderCSSReference(new PackageResourceReference(Base.class,
+                "960.css"));
+        response.renderCSSReference(new PackageResourceReference(Base.class,
+                "reset.css"));
+        response.renderCSSReference(new PackageResourceReference(Base.class,
+                "screen.css"));
+        response.renderCSSReference(new PackageResourceReference(Base.class,
+                "text.css"));
+    }
+
     //
     // SHARED CODE
     //
@@ -71,7 +76,7 @@ public abstract class Base extends WebPage {
     private String bToS(byte[] bytes) {
         return new String(bytes, Charset.forName("UTF-8"));
     }
-    private Selector makeSel() {
+    /*private Selector makeSel() {
         return Pelops.createSelector("Twissjava Pool", "Twissandra");
     }
     private Mutator makeMut() {
@@ -82,12 +87,12 @@ public abstract class Base extends WebPage {
     }
     private Tweet makeTweet(byte[] key, List<Column> tweetcols) {
         return new Tweet(key, bToS(tweetcols.get(1).value), bToS(tweetcols.get(0).value));
-    }
+    }*/
 
 
     //Helpers
     private List<String> getFriendOrFollowerUnames(String COL_FAM, String uname, int count) {
-        Selector selector = makeSel();
+        /*Selector selector = makeSel();
         List<Column> row;
         try {
             row = selector.getColumnsFromRow(uname, COL_FAM, Selector.newColumnsPredicateAll(false, count), RCL);
@@ -100,11 +105,12 @@ public abstract class Base extends WebPage {
         for(Column c : row) {
             unames.add(bToS(c.name));
         }
-        return unames;
+        return unames;*/
+        return null;
     }
 
     private Timeline getLine(String COL_FAM, String uname, String startkey, int count) {
-        Selector selector = makeSel();
+        /*Selector selector = makeSel();
         List<Column> timeline;
         byte[] longTypeStartKey = (startkey.equals("") ? new byte[0] : NumberHelper.toBytes(Long.parseLong(startkey)));
         try {
@@ -146,13 +152,15 @@ public abstract class Base extends WebPage {
         for (String tweetid : tweetids) {
             ordered_tweets.add(makeTweet(tweetid.getBytes(),unordered_tweets.get(tweetid)));
         }
-        return new Timeline(ordered_tweets, mintimestamp);
+        return new Timeline(ordered_tweets, mintimestamp);*/
+
+        return null;
     }
 
 
     //Data Reading
     public User getUserByUsername(String uname) {
-        Selector selector = makeSel();
+        /*Selector selector = makeSel();
         List<Column> usercols;
         try {
             usercols = selector.getColumnsFromRow(uname, USERS, Selector.newColumnsPredicateAll(false,5000), RCL);
@@ -165,7 +173,15 @@ public abstract class Base extends WebPage {
             log.error("User does not exist: " + uname);
             return null;
         }
-        return new User(uname.getBytes(), bToS(usercols.get(0).value));
+        return new User(uname.getBytes(), bToS(usercols.get(0).value));*/
+
+        String password = cassandra.readColumn(uname, "password", USERS);
+
+        if (null == password || password.equals("")) {
+            return null;
+        }
+
+        return new User(uname.getBytes(), password);
     }
 
     public List<String> getFriendUnames(String uname) {
@@ -183,7 +199,7 @@ public abstract class Base extends WebPage {
     }
 
     public List<User> getUsersForUnames(List<String> unames) {
-        Selector selector = makeSel();
+        /*Selector selector = makeSel();
         ArrayList<User> users = new ArrayList<User>();
         Map<String, List<Column>> data;
         try {
@@ -196,7 +212,8 @@ public abstract class Base extends WebPage {
         for (Map.Entry<String,List<Column>> row : data.entrySet()) {
             users.add(new User(row.getKey().getBytes(), bToS(row.getValue().get(0).value)));
         }
-        return users;
+        return users;*/
+        return null;
     }
 
     public List<User> getFriends(String uname) {
@@ -238,7 +255,7 @@ public abstract class Base extends WebPage {
     }
 
     public Tweet getTweet(String tweetid) {
-        Selector selector = makeSel();
+        /*Selector selector = makeSel();
         List<Column> tweetcols;
         try {
             tweetcols = selector.getColumnsFromRow(tweetid, TWEETS, SPall(), RCL);
@@ -248,11 +265,12 @@ public abstract class Base extends WebPage {
             return null;
         }
         //maketweet from cols and return
-        return makeTweet(tweetid.getBytes(),tweetcols);
+        return makeTweet(tweetid.getBytes(),tweetcols);*/
+        return null;
     }
 
     public List<Tweet> getTweetsForTweetids(List<String> tweetids) {
-        Selector selector = makeSel();
+        /*Selector selector = makeSel();
         Map<String, List<Column>> data;
         ArrayList<Tweet> tweets = new ArrayList<Tweet>();
         try {
@@ -266,23 +284,17 @@ public abstract class Base extends WebPage {
         for (Map.Entry<String, List<Column>> datarow : data.entrySet()) {
             tweets.add(makeTweet(datarow.getKey().getBytes(), datarow.getValue()));
         }
-        return tweets;
+        return tweets;*/
+        return null;
     }
 
 
     //Data Writing
     public void saveUser(User user) {
-        Mutator mutator = makeMut();
-        mutator.writeColumn(bToS(user.getKey()), USERS, mutator.newColumn("password",user.getPassword()));
-        try {
-            mutator.execute(WCL);
-        }
-        catch (Exception e) {
-            log.error("Unable to save user: " + bToS(user.getKey()));
-        }
+        cassandra.updateColumn(bToS(user.getKey()), user.getPassword(), "password", USERS);
     }
     public void saveTweet(Tweet tweet) {
-        long timestamp = System.currentTimeMillis();
+        /*long timestamp = System.currentTimeMillis();
         Mutator mutator = makeMut();
 
         //Insert the tweet into tweets cf
@@ -297,18 +309,18 @@ public abstract class Base extends WebPage {
         ArrayList<String> followerUnames = new ArrayList<String>(getFollowerUnames(tweet.getUname()));
         followerUnames.add(tweet.getUname());
         for (String follower : followerUnames) {
-           mutator.writeColumn(follower, TIMELINE, mutator.newColumn(NumberHelper.toBytes(timestamp), key));
+            mutator.writeColumn(follower, TIMELINE, mutator.newColumn(NumberHelper.toBytes(timestamp), key));
         }
         try {
             mutator.execute(WCL);
         }
         catch (Exception e) {
             log.error("Unable to save tweet: " + tweet.getUname() + ": " + tweet.getBody());
-        }
+        }*/
     }
 
     public void addFriends(String from_uname, List<String> to_unames) {
-        long timestamp = System.currentTimeMillis();
+        /*long timestamp = System.currentTimeMillis();
         Mutator mutator = makeMut();
         ArrayList<Column> friends = new ArrayList<Column>();
         for (String uname : to_unames) {
@@ -321,11 +333,11 @@ public abstract class Base extends WebPage {
         }
         catch (Exception e) {
             log.error("Unable to add friendship from: " + from_uname + ", to: " + to_unames);
-        }
+        }*/
     }
 
     public void removeFriends(String from_uname, List<String> to_unames) {
-        Mutator mutator = makeMut();
+        /*Mutator mutator = makeMut();
         for (String uname : to_unames) {
             mutator.deleteColumn(from_uname, FRIENDS, uname);
             mutator.deleteColumn(uname, FOLLOWERS, from_uname);
@@ -335,7 +347,7 @@ public abstract class Base extends WebPage {
         }
         catch (Exception e) {
             log.error("Unable to remove friendship from: " + from_uname + ", to: " + to_unames);
-        }
+        }*/
     }
-    
+
 }

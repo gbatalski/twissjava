@@ -1,19 +1,16 @@
 package example;
 
+import example.models.User;
+import org.apache.wicket.markup.html.WebMarkupContainer;
+import org.apache.wicket.markup.html.basic.Label;
+import org.apache.wicket.markup.html.form.Form;
+import org.apache.wicket.markup.html.form.TextField;
+import org.apache.wicket.model.PropertyModel;
+import org.apache.wicket.protocol.http.WebSession;
+import org.apache.wicket.request.mapper.parameter.PageParameters;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import example.models.User;
-import org.apache.wicket.MarkupContainer;
-import org.apache.wicket.PageParameters;
-import org.apache.wicket.markup.html.WebMarkupContainer;
-import org.apache.wicket.markup.html.form.FormComponent;
-import org.apache.wicket.model.PropertyModel;
-import org.apache.wicket.markup.html.form.TextField;
-import org.apache.wicket.markup.html.form.Form;
-import org.apache.wicket.markup.html.form.Button;
-import org.apache.wicket.markup.html.basic.Label;
-import org.apache.wicket.protocol.http.WebSession;
 
 /**
  * AddFriends has a query section for finding a user that may exist
@@ -30,12 +27,12 @@ public class AddFriends extends Base {
         super(parameters);
         username = ((TwissSession) WebSession.get()).getUname();
         
-        query = parameters.getString("query");
+        query = parameters.get("query").toString();
         if (query == null) {
             query = "";
         }
-        found = parameters.getAsBoolean("found");
-        act = parameters.getAsBoolean("act");
+        found = parameters.get("found").toBoolean();
+        act = parameters.get("act").toBoolean();
 
         add(new FriendForm("friendfinder"));
 
@@ -104,14 +101,14 @@ public class AddFriends extends Base {
             User test = getUserByUsername(q);
             if (test == null) {
                 PageParameters p = new PageParameters();
-                p.put("query",q);
-                p.put("found",false);
+                p.add("query",q);
+                p.add("found",false);
                 setResponsePage(getPage().getClass(), p);
             }
             else {
                 PageParameters p = new PageParameters();
-                p.put("query",q);
-                p.put("found",true);
+                p.add("query",q);
+                p.add("found",true);
                 setResponsePage(getPage().getClass(), p);
             }
         }
