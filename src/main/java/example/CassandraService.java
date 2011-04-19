@@ -182,6 +182,57 @@ public class CassandraService {
     }
 
     /**
+     * list columns in a column family
+     *
+     * return  MAX_COLUMN_COUNT columns at most
+     *
+     * @param key
+     * @param columnFamily
+     * @return
+     */
+    public HashMap<String, String> listColumns(final String key,
+                                               final String columnFamily) {
+
+        return listColumns(key, columnFamily, null, MAX_COLUMN_COUNT);
+    }
+
+    public HashMap<String, String> listColumns(final String key,
+                                               final String columnFamily,
+                                               final String startColumn) {
+
+        return listColumns(key, columnFamily, startColumn, MAX_COLUMN_COUNT);
+    }
+
+    public HashMap<String, String> listColumns(final String key,
+                                               final String columnFamily,
+                                               final String startColumn,
+                                               final int count) {
+        HashMap<String, String> results = new HashMap<String, String>();
+
+        RangeSlicesQuery<String, String, String> sliceQuery = HFactory.createRangeSlicesQuery(_keyspace, SE, SE, SE);
+        sliceQuery.setColumnFamily(columnFamily).setRange(startColumn, null, false, count)
+                .setKeys(key, key).setRowCount(1);
+
+        OrderedRows<String, String, String> rows = sliceQuery.execute().get();
+
+        if (null == rows || 0 == rows.getCount()) {
+            return results;
+        }
+
+        ColumnSlice<String, String> columnSlice = rows.getList().get(0).getColumnSlice();
+
+        if (null == columnSlice) {
+            return results;
+        }
+
+        for (HColumn<String, String> hColumn : columnSlice.getColumns()) {
+            results.put(hColumn.getName(), hColumn.getValue());
+        }
+
+        return results;
+    }
+
+    /**
      * read the columns in a super column.
      *
      * @param key

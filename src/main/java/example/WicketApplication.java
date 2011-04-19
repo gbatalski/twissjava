@@ -22,6 +22,11 @@ public class WicketApplication extends WebApplication {
 
         Base.cassandra = new CassandraService(hostPort, clusterName, keyspace);
         Base.cassandra.createColumnFamilyIfAbsent(Base.USERS);
+        Base.cassandra.createColumnFamilyIfAbsent(Base.TWEETS);
+        Base.cassandra.createColumnFamilyIfAbsent(Base.FOLLOWERS);
+        Base.cassandra.createColumnFamilyIfAbsent(Base.FRIENDS);
+        Base.cassandra.createColumnFamilyIfAbsent(Base.TIMELINE);
+        Base.cassandra.createColumnFamilyIfAbsent(Base.USERLINE);
 	}
 	
 	/**

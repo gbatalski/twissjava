@@ -44,7 +44,7 @@ public class Userline extends HomePage {
     private void setup() {
         add(new TweetForm("poster"));
 
-        Timeline timeline = getTimeline(username, nextpage);
+        Timeline timeline = getUserline(username, nextpage);
         List<Tweet> tweets;//timeline.getView();
 
         if (null == timeline) {

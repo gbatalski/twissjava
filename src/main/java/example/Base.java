@@ -14,7 +14,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Base contains both the default header/footer things for the UI as
@@ -87,7 +90,7 @@ public abstract class Base extends WebPage {
     }
     private Tweet makeTweet(byte[] key, List<Column> tweetcols) {
         return new Tweet(key, bToS(tweetcols.get(1).value), bToS(tweetcols.get(0).value));
-    }*/
+    }  */
 
 
     //Helpers
@@ -106,10 +109,24 @@ public abstract class Base extends WebPage {
             unames.add(bToS(c.name));
         }
         return unames;*/
-        return null;
+
+        Map<String, String> map = cassandra.listColumns(uname, COL_FAM, null, count);
+        return Arrays.asList(map.keySet().toArray(new String[] {}));
     }
 
     private Timeline getLine(String COL_FAM, String uname, String startkey, int count) {
+
+        Map<String, String> map = cassandra.listColumns(uname, COL_FAM, startkey, count);
+
+        if (null == map || 0 == map.size()) {
+            return null;
+        }
+
+        List<String> tweetids = Arrays.asList(map.values().toArray(new String[]{}));
+        List<Tweet> tweets = getTweetsForTweetids(tweetids);
+
+        return new Timeline(tweets, Long.valueOf(String.valueOf(map.keySet().toArray()[0])));
+
         /*Selector selector = makeSel();
         List<Column> timeline;
         byte[] longTypeStartKey = (startkey.equals("") ? new byte[0] : NumberHelper.toBytes(Long.parseLong(startkey)));
@@ -154,27 +171,12 @@ public abstract class Base extends WebPage {
         }
         return new Timeline(ordered_tweets, mintimestamp);*/
 
-        return null;
+        //return null;
     }
 
 
     //Data Reading
     public User getUserByUsername(String uname) {
-        /*Selector selector = makeSel();
-        List<Column> usercols;
-        try {
-            usercols = selector.getColumnsFromRow(uname, USERS, Selector.newColumnsPredicateAll(false,5000), RCL);
-        }
-        catch (Exception e) {
-            log.error("Cannot find user by uname: " + uname);
-            return null;
-        }
-        if (usercols.size() == 0) {
-            log.error("User does not exist: " + uname);
-            return null;
-        }
-        return new User(uname.getBytes(), bToS(usercols.get(0).value));*/
-
         String password = cassandra.readColumn(uname, "password", USERS);
 
         if (null == password || password.equals("")) {
@@ -263,10 +265,13 @@ public abstract class Base extends WebPage {
         catch (Exception e) {
             log.error("Could not locate tweet for id: " + tweetid);
             return null;
-        }
+        }                                */
         //maketweet from cols and return
-        return makeTweet(tweetid.getBytes(),tweetcols);*/
-        return null;
+        //return makeTweet(tweetid.getBytes(),tweetcols);
+
+        Map<String, String> map = cassandra.listColumns(tweetid, TWEETS);
+
+        return new Tweet(tweetid.getBytes(), map.get("uname"), map.get("body"));
     }
 
     public List<Tweet> getTweetsForTweetids(List<String> tweetids) {
@@ -285,7 +290,14 @@ public abstract class Base extends WebPage {
             tweets.add(makeTweet(datarow.getKey().getBytes(), datarow.getValue()));
         }
         return tweets;*/
-        return null;
+
+        ArrayList<Tweet> tweets = new ArrayList<Tweet>();
+
+        for (String tweetid : tweetids) {
+            tweets.add(getTweet(tweetid));
+        }
+
+        return tweets;
     }
 
 
@@ -317,6 +329,18 @@ public abstract class Base extends WebPage {
         catch (Exception e) {
             log.error("Unable to save tweet: " + tweet.getUname() + ": " + tweet.getBody());
         }*/
+
+        long timestamp = System.currentTimeMillis();
+        String key = bToS(tweet.getKey());
+        cassandra.updateColumn(key, tweet.getUname(), "uname", TWEETS);
+        cassandra.updateColumn(key, tweet.getBody(), "body", TWEETS);
+        cassandra.updateColumn(tweet.getUname(), key, String.valueOf(timestamp), USERLINE);
+        cassandra.updateColumn("!PUBLIC!", key, String.valueOf(timestamp), USERLINE);
+
+        ArrayList<String> followerUnames = new ArrayList<String>(getFollowerUnames(tweet.getUname()));
+        for (String follower : followerUnames) {
+            cassandra.updateColumn(follower, key, String.valueOf(timestamp), TIMELINE);
+        }
     }
 
     public void addFriends(String from_uname, List<String> to_unames) {
