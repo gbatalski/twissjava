@@ -23,7 +23,11 @@ import java.util.UUID;
  *  that he is following.
  */
 public class Userline extends HomePage {
-    private String username;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = -4893440430661022168L;
+	private String username;
     private Long nextpage;
 
     public Userline(final PageParameters parameters) {
@@ -55,10 +59,20 @@ public class Userline extends HomePage {
 
         if (tweets.size() > 0) {
             add(new ListView<Tweet>("tweetlist", tweets) {
-                @Override
+                /**
+				 * 
+				 */
+				private static final long serialVersionUID = -7413317851324521943L;
+
+				@Override
                 public void populateItem(final ListItem<Tweet> listitem) {
                     listitem.add(new Link("link") {
-                        @Override
+                        /**
+						 * 
+						 */
+						private static final long serialVersionUID = 6663254615255592969L;
+
+						@Override
                         public void onClick() {
                             PageParameters p = new PageParameters();
                             p.add("username", listitem.getModel().getObject().getUname());
@@ -78,7 +92,12 @@ public class Userline extends HomePage {
             }
             else {
                 add(new WebMarkupContainer("pagedown") {
-                    @Override
+                    /**
+					 * 
+					 */
+					private static final long serialVersionUID = 8869323692236862225L;
+
+					@Override
                     public boolean isVisible() {
                         return false;
                     }
@@ -89,10 +108,20 @@ public class Userline extends HomePage {
             ArrayList<String> hack = new ArrayList<String>(1);
             hack.add("There are no tweets yet. Post one!");
             add(new ListView<String>("tweetlist", hack ) {
-                @Override
+                /**
+				 * 
+				 */
+				private static final long serialVersionUID = -5128393223572874187L;
+
+				@Override
                 public void populateItem(final ListItem<String> listitem) {
                     listitem.add(new Link("link") {
-                        @Override
+                        /**
+						 * 
+						 */
+						private static final long serialVersionUID = -3127820289077794200L;
+
+						@Override
                         public void onClick() {
                         }
                     }.add(new Label("tuname","")));
@@ -100,7 +129,12 @@ public class Userline extends HomePage {
                 }
             }).setVersioned(false);
             add(new WebMarkupContainer("pagedown") {
-                @Override
+                /**
+				 * 
+				 */
+				private static final long serialVersionUID = 296155464292010568L;
+
+				@Override
                 public boolean isVisible() {
                     return false;
                 }
@@ -109,7 +143,11 @@ public class Userline extends HomePage {
     }
 
     private class PageForm extends Form {
-        public PageForm(String id) {
+        /**
+		 * 
+		 */
+		private static final long serialVersionUID = -2660860800827486928L;
+		public PageForm(String id) {
             super(id);
         }
         @Override
@@ -121,7 +159,11 @@ public class Userline extends HomePage {
     }
 
     private class TweetForm extends Form {
-        private String tweetbody;
+        /**
+		 * 
+		 */
+		private static final long serialVersionUID = 1359967079163951398L;
+		private String tweetbody;
 
         public TweetForm(String id) {
             super(id);

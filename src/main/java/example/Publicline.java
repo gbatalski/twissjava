@@ -18,7 +18,11 @@ import java.util.List;
  *  It contains the 40 most recent global tweets.
  */
 public class Publicline extends HomePage {
-    private String username;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 585219387692714553L;
+	private String username;
     private Long nextpage;
 
     public Publicline(final PageParameters parameters) {
@@ -44,10 +48,20 @@ public class Publicline extends HomePage {
 
         if (tweets.size() > 0) {
             add(new ListView<Tweet>("tweetlist", tweets) {
-                @Override
+                /**
+				 * 
+				 */
+				private static final long serialVersionUID = 2976401971784724238L;
+
+				@Override
                 public void populateItem(final ListItem<Tweet> listitem) {
                     listitem.add(new Link("link") {
-                        @Override
+                        /**
+						 * 
+						 */
+						private static final long serialVersionUID = 726753731699398445L;
+
+						@Override
                         public void onClick() {
                             PageParameters p = new PageParameters();
                             p.add("username", listitem.getModel().getObject().getUname());
@@ -67,7 +81,12 @@ public class Publicline extends HomePage {
             }
             else {
                 add(new WebMarkupContainer("pagedown") {
-                    @Override
+                    /**
+					 * 
+					 */
+					private static final long serialVersionUID = -6150537055056328140L;
+
+					@Override
                     public boolean isVisible() {
                         return false;
                     }
@@ -78,10 +97,20 @@ public class Publicline extends HomePage {
             ArrayList<String> hack = new ArrayList<String>(1);
             hack.add("There are no tweets yet. Log in and post one!");
             add(new ListView<String>("tweetlist", hack ) {
-                @Override
+                /**
+				 * 
+				 */
+				private static final long serialVersionUID = 3199139211609854652L;
+
+				@Override
                 public void populateItem(final ListItem<String> listitem) {
                     listitem.add(new Link("link") {
-                        @Override
+                        /**
+						 * 
+						 */
+						private static final long serialVersionUID = 2831753397696987668L;
+
+						@Override
                         public void onClick() {
                         }
                     }.add(new Label("tuname","")));
@@ -89,7 +118,12 @@ public class Publicline extends HomePage {
                 }
             }).setVersioned(false);
             add(new WebMarkupContainer("pagedown") {
-                @Override
+                /**
+				 * 
+				 */
+				private static final long serialVersionUID = -3128439685836078514L;
+
+				@Override
                 public boolean isVisible() {
                     return false;
                 }
@@ -98,7 +132,11 @@ public class Publicline extends HomePage {
     }
 
     private class PageForm extends Form {
-        public PageForm(String id) {
+        /**
+		 * 
+		 */
+		private static final long serialVersionUID = 2287740420779889739L;
+		public PageForm(String id) {
             super(id);
         }
         @Override

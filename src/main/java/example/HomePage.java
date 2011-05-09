@@ -10,6 +10,11 @@ import org.apache.wicket.request.mapper.parameter.PageParameters;
 public class HomePage extends Base {
 
     /**
+	 * 
+	 */
+	private static final long serialVersionUID = -5258693984810768803L;
+
+	/**
 	 * Constructor that is invoked when page is invoked without a session.
 	 * 
 	 * @param parameters

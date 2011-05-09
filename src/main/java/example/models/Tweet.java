@@ -5,7 +5,9 @@ import java.io.Serializable;
 
 public class Tweet implements Serializable
 {
-    private byte[] key;
+
+	private static final long serialVersionUID = 1943849744410184266L;
+	private byte[] key;
     private String uname;
     private String body;
 

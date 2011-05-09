@@ -9,7 +9,7 @@ import org.apache.wicket.request.Response;
  */
 public class WicketApplication extends WebApplication {
 
-    private static final String hostPort = "10.18.101.211:9160";
+    private static final String hostPort = "localhost:9160";
     private static final String clusterName = "Nebula Cassandra Cluster";
     private static final String keyspace = "twissjava";
 

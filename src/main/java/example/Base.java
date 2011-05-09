@@ -24,7 +24,10 @@ import java.util.Map;
  *   well as all the shared code for all the child controllers.
  */
 public abstract class Base extends WebPage {
-    final static Logger log = LoggerFactory.getLogger(Base.class);
+
+	private static final long serialVersionUID = -8667833998001599390L;
+
+	final static Logger log = LoggerFactory.getLogger(Base.class);
 
     //CLs
     final ConsistencyLevel WCL = ConsistencyLevel.ONE;

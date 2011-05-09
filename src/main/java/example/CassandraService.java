@@ -58,7 +58,7 @@ public class CassandraService {
     private void createKeyspaceIfAbsent(final String keyspace) {
         try {
             KeyspaceDefinition kdef = HFactory.createKeyspaceDefinition(keyspace,
-                    "org.apache.cassandra.locator.SimpleStrategy", 2, null);
+                    "org.apache.cassandra.locator.SimpleStrategy", 1, null);
 
             _cluster.addKeyspace(kdef);
         } catch(Exception ex) {

@@ -18,7 +18,11 @@ import java.util.List;
  *   user if they exist. A user cannot friend himself.
  */
 public class AddFriends extends Base {
-    private String username;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1698292222005748513L;
+	private String username;
     private String query;
     private Boolean found;
     private Boolean act;
@@ -37,7 +41,12 @@ public class AddFriends extends Base {
         add(new FriendForm("friendfinder"));
 
         WebMarkupContainer action = new WebMarkupContainer("action") {
-            @Override
+            /**
+			 * 
+			 */
+			private static final long serialVersionUID = 7830131077362480652L;
+
+			@Override
             public boolean isVisible() {
                 return (found != null) && (found) && (username != null) && (!query.equals(username));
             }
@@ -90,7 +99,11 @@ public class AddFriends extends Base {
     }
 
     private class FriendForm extends Form {
-        private String q;
+        /**
+		 * 
+		 */
+		private static final long serialVersionUID = -8179213315208310890L;
+		private String q;
 
         public FriendForm(String id) {
             super(id);
@@ -119,7 +132,11 @@ public class AddFriends extends Base {
     //<p>Enter a username above to see if they are on the site!</p>
 
     private class ActionFriendForm extends Form {
-        public ActionFriendForm(String id) {
+        /**
+		 * 
+		 */
+		private static final long serialVersionUID = 3958649030743533718L;
+		public ActionFriendForm(String id) {
             super(id);
         }
         @Override

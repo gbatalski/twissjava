@@ -4,7 +4,11 @@ import org.apache.wicket.protocol.http.WebSession;
 import org.apache.wicket.request.Request;
 
 public class TwissSession extends WebSession {
-    private String uname;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = -8009346529502327012L;
+	private String uname;
 
     public TwissSession(Request request) {
         super(request);

@@ -14,7 +14,11 @@ import org.apache.wicket.request.mapper.parameter.PageParameters;
  *  a user account.
  */
 public class Authorize extends Base {
-    private Boolean login;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = -7960746156253945782L;
+	private Boolean login;
     private Boolean register;
 
     public Authorize(final PageParameters parameters) {
@@ -64,7 +68,11 @@ public class Authorize extends Base {
     }
 
     private class LoginForm extends Form {
-        private String username;
+        /**
+		 * 
+		 */
+		private static final long serialVersionUID = -6972788719244812360L;
+		private String username;
         private String password;
 
         public LoginForm(String id) {
@@ -90,7 +98,11 @@ public class Authorize extends Base {
     }
 
     class RegisterForm extends Form {
-        private String new_username;
+        /**
+		 * 
+		 */
+		private static final long serialVersionUID = -600476161343749424L;
+		private String new_username;
         private String password1;
         private String password2;
 
