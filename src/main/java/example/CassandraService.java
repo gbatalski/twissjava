@@ -12,7 +12,10 @@ import me.prettyprint.hector.api.ddl.KeyspaceDefinition;
 import me.prettyprint.hector.api.factory.HFactory;
 import me.prettyprint.hector.api.mutation.Mutator;
 import me.prettyprint.hector.api.query.*;
+
+import org.apache.cassandra.utils.ByteBufferUtil;
 import org.apache.log4j.Logger;
+import org.scale7.cassandra.pelops.Pelops;
 
 import java.util.*;
 
@@ -46,8 +49,8 @@ public class CassandraService {
         cassandraHostConfigurator.setMaxWaitTimeWhenExhausted(MAXWAITTIMEWHENEXHAUSTED);
         cassandraHostConfigurator.setRetryDownedHosts(true);
 
-        _cluster = HFactory.getOrCreateCluster(clusterName, cassandraHostConfigurator);
         createKeyspaceIfAbsent(keyspace);
+        _cluster = HFactory.getOrCreateCluster(clusterName, cassandraHostConfigurator);
         _keyspace = HFactory.createKeyspace(keyspace, _cluster);
     }
 
@@ -57,6 +60,7 @@ public class CassandraService {
      */
     private void createKeyspaceIfAbsent(final String keyspace) {
         try {
+        	Pelops.createKeyspaceManager(null).addKeyspace(null);
             KeyspaceDefinition kdef = HFactory.createKeyspaceDefinition(keyspace,
                     "org.apache.cassandra.locator.SimpleStrategy", 1, null);
 

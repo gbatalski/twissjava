@@ -19,160 +19,183 @@ import java.util.UUID;
 
 /**
  * This is the typical twitter page. A form for submitting a 140-character
- *  tweet, and all the tweets that user has made and tweets from everyone
- *  that he is following.
+ * tweet, and all the tweets that user has made and tweets from everyone that he
+ * is following.
  */
 public class Userline extends HomePage {
-    /**
+	/**
 	 * 
 	 */
 	private static final long serialVersionUID = -4893440430661022168L;
+
 	private String username;
-    private Long nextpage;
 
-    public Userline(final PageParameters parameters) {
-        super(parameters);
-        nextpage = parameters.get("nextpage").toLong(0);
-        username = ((TwissSession) WebSession.get()).getUname();
-        setup();
-        if (username == null) {
-            //setRedirect(true);
+	private Long nextpage;
 
-            setResponsePage(Publicline.class);
-        }
-        else {
-            //setup();
-        }
-    }
+	public Userline(final PageParameters parameters) {
+		super(parameters);
+		nextpage = parameters.get("nextpage")
+								.toLong(0);
+		username = ((TwissSession) WebSession.get()).getUname();
+		setup();
+		if (username == null) {
+			// setRedirect(true);
 
-    private void setup() {
-        add(new TweetForm("poster"));
+			setResponsePage(Publicline.class);
+		} else {
+			// setup();
+		}
+	}
 
-        Timeline timeline = getUserline(username, nextpage);
-        List<Tweet> tweets;//timeline.getView();
+	private void setup() {
+		add(new TweetForm("poster"));
 
-        if (null == timeline) {
-            tweets = new ArrayList<Tweet>(0);
-        } else {
-            tweets = timeline.getView();
-        }
+		Timeline timeline = getUserline(username, nextpage);
+		List<Tweet> tweets;// timeline.getView();
 
-        if (tweets.size() > 0) {
-            add(new ListView<Tweet>("tweetlist", tweets) {
-                /**
+		if (null == timeline) {
+			tweets = new ArrayList<Tweet>(0);
+		} else {
+			tweets = timeline.getView();
+		}
+
+		if (tweets.size() > 0) {
+			add(new ListView<Tweet>("tweetlist",
+									tweets) {
+				/**
 				 * 
 				 */
 				private static final long serialVersionUID = -7413317851324521943L;
 
 				@Override
-                public void populateItem(final ListItem<Tweet> listitem) {
-                    listitem.add(new Link("link") {
-                        /**
+				public void populateItem(final ListItem<Tweet> listitem) {
+					listitem.add(new Link("link") {
+						/**
 						 * 
 						 */
 						private static final long serialVersionUID = 6663254615255592969L;
 
 						@Override
-                        public void onClick() {
-                            PageParameters p = new PageParameters();
-                            p.add("username", listitem.getModel().getObject().getUname());
-                            setResponsePage(Publicline.class, p);
-                        }
-                    }.add(new Label("tuname",listitem.getModel().getObject().getUname())));
-                    listitem.add(new Label("tbody", ": " + listitem.getModel().getObject().getBody()));
-                }
-            }).setVersioned(false);
-            Long linktopaginate = timeline.getNextview();
-            if (linktopaginate != null) {
-                nextpage = linktopaginate;
-                WebMarkupContainer pagediv = new WebMarkupContainer("pagedown");
-                PageForm pager = new PageForm("pageform");
-                pagediv.add(pager);
-                add(pagediv);
-            }
-            else {
-                add(new WebMarkupContainer("pagedown") {
-                    /**
+						public void onClick() {
+							PageParameters p = new PageParameters();
+							p.add("username", listitem.getModel()
+														.getObject()
+														.getUname());
+							setResponsePage(Publicline.class, p);
+						}
+					}.add(new Label("tuname",
+									listitem.getModel()
+											.getObject()
+											.getUname())));
+					listitem.add(new Label(	"tbody",
+											": " + listitem.getModel()
+															.getObject()
+															.getBody()));
+				}
+			}).setVersioned(false);
+			Long linktopaginate = timeline.getNextview();
+			if (linktopaginate != null) {
+				nextpage = linktopaginate;
+				WebMarkupContainer pagediv = new WebMarkupContainer("pagedown");
+				PageForm pager = new PageForm("pageform");
+				pagediv.add(pager);
+				add(pagediv);
+			} else {
+				add(new WebMarkupContainer("pagedown") {
+					/**
 					 * 
 					 */
 					private static final long serialVersionUID = 8869323692236862225L;
 
 					@Override
-                    public boolean isVisible() {
-                        return false;
-                    }
-                });
-            }
-        }
-        else {
-            ArrayList<String> hack = new ArrayList<String>(1);
-            hack.add("There are no tweets yet. Post one!");
-            add(new ListView<String>("tweetlist", hack ) {
-                /**
+					public boolean isVisible() {
+						return false;
+					}
+				});
+			}
+		} else {
+			ArrayList<String> hack = new ArrayList<String>(1);
+			hack.add("There are no tweets yet. Post one!");
+			add(new ListView<String>(	"tweetlist",
+										hack) {
+				/**
 				 * 
 				 */
 				private static final long serialVersionUID = -5128393223572874187L;
 
 				@Override
-                public void populateItem(final ListItem<String> listitem) {
-                    listitem.add(new Link("link") {
-                        /**
+				public void populateItem(final ListItem<String> listitem) {
+					listitem.add(new Link("link") {
+						/**
 						 * 
 						 */
 						private static final long serialVersionUID = -3127820289077794200L;
 
 						@Override
-                        public void onClick() {
-                        }
-                    }.add(new Label("tuname","")));
-                    listitem.add(new Label("tbody", listitem.getModel().getObject()));
-                }
-            }).setVersioned(false);
-            add(new WebMarkupContainer("pagedown") {
-                /**
+						public void onClick() {
+						}
+					}.add(new Label("tuname",
+									"")));
+					listitem.add(new Label(	"tbody",
+											listitem.getModel()
+													.getObject()));
+				}
+			}).setVersioned(false);
+			add(new WebMarkupContainer("pagedown") {
+				/**
 				 * 
 				 */
 				private static final long serialVersionUID = 296155464292010568L;
 
 				@Override
-                public boolean isVisible() {
-                    return false;
-                }
-            });
-        }
-    }
+				public boolean isVisible() {
+					return false;
+				}
+			});
+		}
+	}
 
-    private class PageForm extends Form {
-        /**
+	private class PageForm extends Form {
+		/**
 		 * 
 		 */
 		private static final long serialVersionUID = -2660860800827486928L;
-		public PageForm(String id) {
-            super(id);
-        }
-        @Override
-        public void onSubmit() {
-            PageParameters p = new PageParameters();
-            p.add("nextpage", nextpage);
-            setResponsePage(getPage().getClass(), p);
-        }
-    }
 
-    private class TweetForm extends Form {
-        /**
+		public PageForm(String id) {
+			super(id);
+		}
+
+		@Override
+		public void onSubmit() {
+			PageParameters p = new PageParameters();
+			p.add("nextpage", nextpage);
+			setResponsePage(getPage().getClass(), p);
+		}
+	}
+
+	private class TweetForm extends Form {
+		/**
 		 * 
 		 */
 		private static final long serialVersionUID = 1359967079163951398L;
+
 		private String tweetbody;
 
-        public TweetForm(String id) {
-            super(id);
-            add(new TextArea("tweetbody", new PropertyModel(this,"tweetbody")));
-        }
-        @Override
-        public void onSubmit() {
-            saveTweet(new Tweet(UUID.randomUUID().toString().getBytes(), username, tweetbody));
-            setResponsePage(getPage().getClass());
-        }
-    }
+		public TweetForm(String id) {
+			super(id);
+			add(new TextArea(	"tweetbody",
+								new PropertyModel(	this,
+													"tweetbody")));
+		}
+
+		@Override
+		public void onSubmit() {
+			saveTweet(new Tweet(UUID.randomUUID()
+									.toString()
+									.getBytes(),
+								username,
+								tweetbody));
+			setResponsePage(getPage().getClass());
+		}
+	}
 }

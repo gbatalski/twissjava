@@ -3,25 +3,36 @@ package example;
 import example.models.Timeline;
 import example.models.Tweet;
 import example.models.User;
+
+import org.apache.cassandra.thrift.Column;
 import org.apache.cassandra.thrift.ConsistencyLevel;
+import org.apache.cassandra.thrift.SlicePredicate;
+import org.apache.cassandra.utils.ByteBufferUtil;
 import org.apache.wicket.markup.html.IHeaderResponse;
 import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.protocol.http.WebSession;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.apache.wicket.request.resource.PackageResourceReference;
+import org.scale7.cassandra.pelops.Bytes;
+import org.scale7.cassandra.pelops.Mutator;
+import org.scale7.cassandra.pelops.Pelops;
+import org.scale7.cassandra.pelops.Selector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+
 import java.util.List;
 import java.util.Map;
 
 /**
- * Base contains both the default header/footer things for the UI as
- *   well as all the shared code for all the child controllers.
+ * Base contains both the default header/footer things for the UI as well as all
+ * the shared code for all the child controllers.
  */
 public abstract class Base extends WebPage {
 
@@ -29,352 +40,444 @@ public abstract class Base extends WebPage {
 
 	final static Logger log = LoggerFactory.getLogger(Base.class);
 
-    //CLs
-    final ConsistencyLevel WCL = ConsistencyLevel.ONE;
-    final ConsistencyLevel RCL = ConsistencyLevel.ONE;
+	// CLs
+	final ConsistencyLevel WCL = ConsistencyLevel.ONE;
 
-    //Column Family names
-    public final static String USERS = "User";
-    public final static String FRIENDS = "Friends";
-    public final static String FOLLOWERS = "Followers";
-    public final static String TWEETS = "Tweet";
-    public final static String TIMELINE = "Timeline";
-    public final static String USERLINE = "Userline";
+	final ConsistencyLevel RCL = ConsistencyLevel.ONE;
 
-    public static CassandraService cassandra;
+	// Column Family names
+	public final static String USERS = "User";
 
-    //UI settings
-    public Base(final PageParameters parameters) {
+	public final static String FRIENDS = "Friends";
 
-        /*add(CSSPackageResource.getHeaderContribution(Base.class, "960.css"));
-        add(CSSPackageResource.getHeaderContribution(Base.class, "reset.css"));
-        add(CSSPackageResource.getHeaderContribution(Base.class, "screen.css"));
-        add(CSSPackageResource.getHeaderContribution(Base.class, "text.css"));*/
+	public final static String FOLLOWERS = "Followers";
 
-        String condauth = "Log";
-        String username = ((TwissSession)WebSession.get()).getUname();
-        if (username == null) {
-            condauth += "in";
-        }
-        else {
-            condauth += "out: " + username;
-        }
-        add(new Label("loginout", condauth));
-    }
+	public final static String TWEETS = "Tweet";
 
-    @Override
-    public void renderHead(IHeaderResponse response) {
-        response.renderCSSReference(new PackageResourceReference(Base.class,
-                "960.css"));
-        response.renderCSSReference(new PackageResourceReference(Base.class,
-                "reset.css"));
-        response.renderCSSReference(new PackageResourceReference(Base.class,
-                "screen.css"));
-        response.renderCSSReference(new PackageResourceReference(Base.class,
-                "text.css"));
-    }
+	public final static String TIMELINE = "Timeline";
 
-    //
-    // SHARED CODE
-    //
+	public final static String USERLINE = "Userline";
 
-    //Space-savers
-    private String bToS(byte[] bytes) {
-        return new String(bytes, Charset.forName("UTF-8"));
-    }
-    /*private Selector makeSel() {
-        return Pelops.createSelector("Twissjava Pool", "Twissandra");
-    }
-    private Mutator makeMut() {
-        return Pelops.createMutator("Twissjava Pool", "Twissandra");
-    }
-    private SlicePredicate SPall(){
-        return Selector.newColumnsPredicateAll(false,5000);
-    }
-    private Tweet makeTweet(byte[] key, List<Column> tweetcols) {
-        return new Tweet(key, bToS(tweetcols.get(1).value), bToS(tweetcols.get(0).value));
-    }  */
+	public static CassandraService cassandra;
 
+	// UI settings
+	public Base(final PageParameters parameters) {
 
-    //Helpers
-    private List<String> getFriendOrFollowerUnames(String COL_FAM, String uname, int count) {
-        /*Selector selector = makeSel();
-        List<Column> row;
-        try {
-            row = selector.getColumnsFromRow(uname, COL_FAM, Selector.newColumnsPredicateAll(false, count), RCL);
-        }
-        catch (Exception e) {
-            log.error("No record found for uname: " + uname + ", COL_FAM: " + COL_FAM);
-            return Collections.emptyList();
-        }
-        ArrayList<String> unames = new ArrayList<String>(row.size());
-        for(Column c : row) {
-            unames.add(bToS(c.name));
-        }
-        return unames;*/
+		/*
+		 * add(CSSPackageResource.getHeaderContribution(Base.class, "960.css"));
+		 * add(CSSPackageResource.getHeaderContribution(Base.class,
+		 * "reset.css"));
+		 * add(CSSPackageResource.getHeaderContribution(Base.class,
+		 * "screen.css"));
+		 * add(CSSPackageResource.getHeaderContribution(Base.class,
+		 * "text.css"));
+		 */
 
-        Map<String, String> map = cassandra.listColumns(uname, COL_FAM, null, count);
-        return Arrays.asList(map.keySet().toArray(new String[] {}));
-    }
+		String condauth = "Log";
+		String username = ((TwissSession) WebSession.get()).getUname();
+		if (username == null) {
+			condauth += "in";
+		} else {
+			condauth += "out: " + username;
+		}
+		add(new Label(	"loginout",
+						condauth));
+	}
 
-    private Timeline getLine(String COL_FAM, String uname, String startkey, int count) {
+	@Override
+	public void renderHead(IHeaderResponse response) {
+		response.renderCSSReference(new PackageResourceReference(	Base.class,
+																	"960.css"));
+		response.renderCSSReference(new PackageResourceReference(	Base.class,
+																	"reset.css"));
+		response.renderCSSReference(new PackageResourceReference(	Base.class,
+																	"screen.css"));
+		response.renderCSSReference(new PackageResourceReference(	Base.class,
+																	"text.css"));
+	}
 
-        Map<String, String> map = cassandra.listColumns(uname, COL_FAM, startkey, count);
+	//
+	// SHARED CODE
+	//
 
-        if (null == map || 0 == map.size()) {
-            return null;
-        }
+	// Space-savers
+	private String bToS(byte[] bytes) {
+		return new String(	bytes,
+							Charset.forName("UTF-8"));
+	}
 
-        List<String> tweetids = Arrays.asList(map.values().toArray(new String[]{}));
-        List<Tweet> tweets = getTweetsForTweetids(tweetids);
+	private Selector makeSel() {
+		return Pelops.createSelector("Twissjava Pool");
+	}
 
-        return new Timeline(tweets, Long.valueOf(String.valueOf(map.keySet().toArray()[0])));
+	private Mutator makeMut() {
+		return Pelops.createMutator("Twissjava Pool");
+	}
 
-        /*Selector selector = makeSel();
-        List<Column> timeline;
-        byte[] longTypeStartKey = (startkey.equals("") ? new byte[0] : NumberHelper.toBytes(Long.parseLong(startkey)));
-        try {
-            timeline = selector.getColumnsFromRow(uname, COL_FAM, Selector.newColumnsPredicate(longTypeStartKey,new byte[0],true,count+1), RCL);
-        }
-        catch (Exception e) {
-            log.error("Unable to retrieve timeline for uname: " + uname);
-            return null;
-        }
-        Long mintimestamp = null;
-        if (timeline.size() > count) {
-            //find min timestamp
-            mintimestamp = Long.MAX_VALUE;
-            Column removeme = timeline.get(0); //This cannot fail. Count is 0+, and size is thus 1+. Only needed for initialization.
-            for (Column c : timeline) {
-                long ctime = ByteBuffer.wrap(c.name).getLong();
-                if (ctime < mintimestamp) {
-                    mintimestamp = ctime;
-                    removeme = c;
-                }
-            }
-            //eject column from list after saving the timestamp
-            timeline.remove(removeme);
-        }
-        ArrayList<String> tweetids = new ArrayList<String>(timeline.size());
-        for (Column c : timeline) {
-            tweetids.add(bToS(c.value));
-        }
-        Map<String, List<Column>> unordered_tweets = Collections.emptyMap();
-        try {
-            unordered_tweets = selector.getColumnsFromRows(tweetids, TWEETS, SPall(), RCL);
-        }
-        catch (Exception e) {
-            log.error("Unable to retrieve tweets from timeline for uname: " + uname);
-            return null;
-        }
-        //Order the tweets by the ordered tweetids
-        ArrayList<Tweet> ordered_tweets = new ArrayList<Tweet>(tweetids.size());
-        for (String tweetid : tweetids) {
-            ordered_tweets.add(makeTweet(tweetid.getBytes(),unordered_tweets.get(tweetid)));
-        }
-        return new Timeline(ordered_tweets, mintimestamp);*/
+	private SlicePredicate SPall() {
+		return Selector.newColumnsPredicateAll(false, 5000);
+	}
 
-        //return null;
-    }
+	private Tweet makeTweet(byte[] key, List<Column> tweetcols) {
+		return new Tweet(	key,
+							bToS(tweetcols.get(1).getValue()),
+							bToS(tweetcols.get(0).getValue()));
+	}
 
+	// Helpers
+	private List<String> getFriendOrFollowerUnames(String COL_FAM,
+			String uname, int count) {
 
-    //Data Reading
-    public User getUserByUsername(String uname) {
-        String password = cassandra.readColumn(uname, "password", USERS);
+		Selector selector = makeSel();
 
-        if (null == password || password.equals("")) {
-            return null;
-        }
+		List<Column> row;
+		try {
+			row = selector.getColumnsFromRow(	COL_FAM,
+												uname,
+												Selector.newColumnsPredicateAll(false,
+																				count),
+												RCL);
+		} catch (Exception e) {
+			log.error("No record found for uname: " + uname + ", COL_FAM: "
+					+ COL_FAM);
+			return Collections.emptyList();
+		}
+		ArrayList<String> unames = new ArrayList<String>(row.size());
+		for (Column c : row) {
+			unames.add(bToS(c.getName()));
+		}
+		return unames;
 
-        return new User(uname.getBytes(), password);
-    }
+		// Map<String, String> map = cassandra.listColumns(uname,
+		// COL_FAM,
+		// null,
+		// count);
+		// return Arrays.asList(map.keySet()
+		// .toArray(new String[] {}));
+	}
 
-    public List<String> getFriendUnames(String uname) {
-        return getFriendUnames(uname, 5000);
-    }
-    public List<String> getFriendUnames(String uname, int count) {
-        return getFriendOrFollowerUnames(FRIENDS, uname, count);
-    }
+	private Timeline getLine(String COL_FAM, String uname, String startkey,
+			int count) {
 
-    public List<String> getFollowerUnames(String uname) {
-        return getFollowerUnames(uname, 5000);
-    }
-    public List<String> getFollowerUnames(String uname, int count) {
-        return getFriendOrFollowerUnames(FOLLOWERS, uname, count);
-    }
+//		Map<String, String> map = cassandra.listColumns(uname,
+//														COL_FAM,
+//														startkey,
+//														count);
+//
+//		if (null == map || 0 == map.size()) {
+//			return null;
+//		}
+//
+//		List<String> tweetids = Arrays.asList(map.values()
+//													.toArray(new String[] {}));
+//		List<Tweet> tweets = getTweetsForTweetids(tweetids);
+//
+//		return new Timeline(tweets,
+//							Long.valueOf(String.valueOf(map.keySet()
+//															.toArray()[0])));
 
-    public List<User> getUsersForUnames(List<String> unames) {
-        /*Selector selector = makeSel();
-        ArrayList<User> users = new ArrayList<User>();
-        Map<String, List<Column>> data;
-        try {
-            data = selector.getColumnsFromRows(unames, USERS, SPall(), RCL);
-        }
-        catch (Exception e) {
-            log.error("Cannot get users for unames: " + unames);
-            return users;
-        }
-        for (Map.Entry<String,List<Column>> row : data.entrySet()) {
-            users.add(new User(row.getKey().getBytes(), bToS(row.getValue().get(0).value)));
-        }
-        return users;*/
-        return null;
-    }
+		Selector selector = makeSel();
+		List<Column> timeline;
+		byte[] longTypeStartKey = startkey.equals("") ? Bytes.EMPTY.toByteArray()
+				: ByteBufferUtil.bytes(Long.parseLong(startkey))
+								.array();
+		try {
+			timeline = selector.getColumnsFromRow(	COL_FAM,
+													uname,
+													Selector.newColumnsPredicate(	Bytes.fromByteArray(longTypeStartKey),
+																					Bytes.EMPTY,
+																					false,
+																					count + 1),
+													RCL);
+		} catch (Exception e) {
+			log.error("Unable to retrieve timeline for uname: " + uname);
+			return null;
+		}
+		Long mintimestamp = null;
+		if (timeline.size() > count) {
+			// find min timestamp
+			mintimestamp = Long.MAX_VALUE;
+			Column removeme = timeline.get(0);
+			// This cannot fail. Count is 0+, and size is thus 1+. Only needed
+			// for initialization.
+			for (Column c : timeline) {
+				long ctime = ByteBufferUtil.toLong(ByteBuffer.wrap(c.getName()));
+				if (ctime < mintimestamp) {
+					mintimestamp = ctime;
+					removeme = c;
+				}
+			}
+			// eject column from list after saving the timestamp
+			timeline.remove(removeme);
+		}
+		ArrayList<Bytes> tweetids = new ArrayList<Bytes>(timeline.size());
+		for (Column c : timeline) {
+			tweetids.add(Bytes.fromByteArray(c.getValue()));
+		}
+		Map<Bytes, List<Column>> unordered_tweets = Collections.emptyMap();
+		try {
+			unordered_tweets = selector.getColumnsFromRows(	TWEETS,
+															tweetids,
+															SPall(),
+															RCL);
+		} catch (Exception e) {
+			log.error("Unable to retrieve tweets from timeline for uname: "
+					+ uname);
+			return null;
+		} // Order the tweets by the ordered tweetids
+		ArrayList<Tweet> ordered_tweets = new ArrayList<Tweet>(tweetids.size());
+		for (Bytes tweetid : tweetids) {
+			ordered_tweets.add(makeTweet(	tweetid.toByteArray(),
+											unordered_tweets.get(tweetid)));
+		}
+		return new Timeline(ordered_tweets,
+							mintimestamp);
 
-    public List<User> getFriends(String uname) {
-        return getFriends(uname, 5000);
-    }
-    public List<User> getFriends(String uname, int count) {
-        List<String> friendUnames = getFriendUnames(uname, count);
-        return getUsersForUnames(friendUnames);
-    }
+	}
 
-    public List<User> getFollowers(String uname) {
-        return getFollowers(uname, 5000);
-    }
-    public List<User> getFollowers(String uname, int count) {
-        List<String> followerUnames = getFollowerUnames(uname, count);
-        return getUsersForUnames(followerUnames);
-    }
+	// Data Reading
+	public User getUserByUsername(String uname) {
+		String password = cassandra.readColumn(uname, "password", USERS);
 
-    public Timeline getTimeline(String uname) {
-        return getTimeline(uname, "", 40);
-    }
-    public Timeline getTimeline(String uname, Long startkey) {
-        String longAsStr = (startkey == null) ? "" : String.valueOf(startkey);
-        return getTimeline(uname, longAsStr, 40);
-    }
-    public Timeline getTimeline(String uname, String startkey, int limit) {
-        return getLine(TIMELINE, uname, startkey, limit);
-    }
+		if (null == password || password.equals("")) {
+			return null;
+		}
 
-    public Timeline getUserline(String uname) {
-        return getUserline(uname, "", 40);
-    }
-    public Timeline getUserline(String uname, Long startkey) {
-        String longAsStr = (startkey == null) ? "" : String.valueOf(startkey);
-        return getUserline(uname, longAsStr, 40);
-    }
-    public Timeline getUserline(String uname, String startkey, int limit) {
-        return getLine(USERLINE, uname, startkey, limit);
-    }
+		return new User(uname.getBytes(),
+						password);
+	}
 
-    public Tweet getTweet(String tweetid) {
-        /*Selector selector = makeSel();
-        List<Column> tweetcols;
-        try {
-            tweetcols = selector.getColumnsFromRow(tweetid, TWEETS, SPall(), RCL);
-        }
-        catch (Exception e) {
-            log.error("Could not locate tweet for id: " + tweetid);
-            return null;
-        }                                */
-        //maketweet from cols and return
-        //return makeTweet(tweetid.getBytes(),tweetcols);
+	public List<String> getFriendUnames(String uname) {
+		return getFriendUnames(uname, 5000);
+	}
 
-        Map<String, String> map = cassandra.listColumns(tweetid, TWEETS);
+	public List<String> getFriendUnames(String uname, int count) {
+		return getFriendOrFollowerUnames(FRIENDS, uname, count);
+	}
 
-        return new Tweet(tweetid.getBytes(), map.get("uname"), map.get("body"));
-    }
+	public List<String> getFollowerUnames(String uname) {
+		return getFollowerUnames(uname, 5000);
+	}
 
-    public List<Tweet> getTweetsForTweetids(List<String> tweetids) {
-        /*Selector selector = makeSel();
-        Map<String, List<Column>> data;
-        ArrayList<Tweet> tweets = new ArrayList<Tweet>();
-        try {
-            data = selector.getColumnsFromRows(tweetids, TWEETS, SPall(), RCL);
-        }
-        catch (Exception e) {
-            log.error("Cannot get tweets for tweetids: " + tweetids);
-            return tweets;
-        }
-        //loop maketweet from cols and return
-        for (Map.Entry<String, List<Column>> datarow : data.entrySet()) {
-            tweets.add(makeTweet(datarow.getKey().getBytes(), datarow.getValue()));
-        }
-        return tweets;*/
+	public List<String> getFollowerUnames(String uname, int count) {
+		return getFriendOrFollowerUnames(FOLLOWERS, uname, count);
+	}
 
-        ArrayList<Tweet> tweets = new ArrayList<Tweet>();
+	public List<User> getUsersForUnames(List<String> unames) {
 
-        for (String tweetid : tweetids) {
-            tweets.add(getTweet(tweetid));
-        }
+		Selector selector = makeSel();
+		ArrayList<User> users = new ArrayList<User>();
+		Map<Bytes, List<Column>> data;
+		List<Bytes> unameAsBytes = new ArrayList<Bytes>(unames.size());
+		for (String uname : unames) {
+			unameAsBytes.add(Bytes.fromUTF8(uname));
+		}
 
-        return tweets;
-    }
+		try {
+			data = selector.getColumnsFromRows(	USERS,
+												unameAsBytes,
+												SPall(),
+												RCL);
+		} catch (Exception e) {
+			log.error("Cannot get users for unames: " + unames);
+			return users;
+		}
+		for (Map.Entry<Bytes, List<Column>> row : data.entrySet()) {
+			users.add(new User(	row.getKey()
+									.getBytes()
+									.array(),
+								bToS(row.getValue()
+										.get(0)
+										.getValue())));
+		}
+		return users;
 
+	}
 
-    //Data Writing
-    public void saveUser(User user) {
-        cassandra.updateColumn(bToS(user.getKey()), user.getPassword(), "password", USERS);
-    }
-    public void saveTweet(Tweet tweet) {
-        /*long timestamp = System.currentTimeMillis();
-        Mutator mutator = makeMut();
+	public List<User> getFriends(String uname) {
+		return getFriends(uname, 5000);
+	}
 
-        //Insert the tweet into tweets cf
-        String key = bToS(tweet.getKey());
-        mutator.writeColumn(key, TWEETS, mutator.newColumn("uname",tweet.getUname()));
-        mutator.writeColumn(key, TWEETS, mutator.newColumn("body",tweet.getBody()));
-        //Insert into the user's timeline
-        mutator.writeColumn(tweet.getUname(), USERLINE, mutator.newColumn(NumberHelper.toBytes(timestamp), key));
-        //Insert into the public timeline
-        mutator.writeColumn("!PUBLIC!", USERLINE, mutator.newColumn(NumberHelper.toBytes(timestamp), key));
-        //Insert into all followers streams
-        ArrayList<String> followerUnames = new ArrayList<String>(getFollowerUnames(tweet.getUname()));
-        followerUnames.add(tweet.getUname());
-        for (String follower : followerUnames) {
-            mutator.writeColumn(follower, TIMELINE, mutator.newColumn(NumberHelper.toBytes(timestamp), key));
-        }
-        try {
-            mutator.execute(WCL);
-        }
-        catch (Exception e) {
-            log.error("Unable to save tweet: " + tweet.getUname() + ": " + tweet.getBody());
-        }*/
+	public List<User> getFriends(String uname, int count) {
+		List<String> friendUnames = getFriendUnames(uname, count);
+		return getUsersForUnames(friendUnames);
+	}
 
-        long timestamp = System.currentTimeMillis();
-        String key = bToS(tweet.getKey());
-        cassandra.updateColumn(key, tweet.getUname(), "uname", TWEETS);
-        cassandra.updateColumn(key, tweet.getBody(), "body", TWEETS);
-        cassandra.updateColumn(tweet.getUname(), key, String.valueOf(timestamp), USERLINE);
-        cassandra.updateColumn("!PUBLIC!", key, String.valueOf(timestamp), USERLINE);
+	public List<User> getFollowers(String uname) {
+		return getFollowers(uname, 5000);
+	}
 
-        ArrayList<String> followerUnames = new ArrayList<String>(getFollowerUnames(tweet.getUname()));
-        for (String follower : followerUnames) {
-            cassandra.updateColumn(follower, key, String.valueOf(timestamp), TIMELINE);
-        }
-    }
+	public List<User> getFollowers(String uname, int count) {
+		List<String> followerUnames = getFollowerUnames(uname, count);
+		return getUsersForUnames(followerUnames);
+	}
 
-    public void addFriends(String from_uname, List<String> to_unames) {
-        /*long timestamp = System.currentTimeMillis();
-        Mutator mutator = makeMut();
-        ArrayList<Column> friends = new ArrayList<Column>();
-        for (String uname : to_unames) {
-            friends.add(mutator.newColumn(uname, String.valueOf(timestamp)));
-            mutator.writeColumn(uname, FOLLOWERS, mutator.newColumn(from_uname, String.valueOf(timestamp)));
-        }
-        mutator.writeColumns(from_uname, FRIENDS, friends);
-        try {
-            mutator.execute(WCL);
-        }
-        catch (Exception e) {
-            log.error("Unable to add friendship from: " + from_uname + ", to: " + to_unames);
-        }*/
-    }
+	public Timeline getTimeline(String uname) {
+		return getTimeline(uname, "", 40);
+	}
 
-    public void removeFriends(String from_uname, List<String> to_unames) {
-        /*Mutator mutator = makeMut();
-        for (String uname : to_unames) {
-            mutator.deleteColumn(from_uname, FRIENDS, uname);
-            mutator.deleteColumn(uname, FOLLOWERS, from_uname);
-        }
-        try {
-            mutator.execute(WCL);
-        }
-        catch (Exception e) {
-            log.error("Unable to remove friendship from: " + from_uname + ", to: " + to_unames);
-        }*/
-    }
+	public Timeline getTimeline(String uname, Long startkey) {
+		String longAsStr = (startkey == null) ? "" : String.valueOf(startkey);
+		return getTimeline(uname, longAsStr, 40);
+	}
+
+	public Timeline getTimeline(String uname, String startkey, int limit) {
+		return getLine(TIMELINE, uname, startkey, limit);
+	}
+
+	public Timeline getUserline(String uname) {
+		return getUserline(uname, "", 40);
+	}
+
+	public Timeline getUserline(String uname, Long startkey) {
+		String longAsStr = (startkey == null) ? "" : String.valueOf(startkey);
+		return getUserline(uname, longAsStr, 40);
+	}
+
+	public Timeline getUserline(String uname, String startkey, int limit) {
+		return getLine(USERLINE, uname, startkey, limit);
+	}
+
+	public Tweet getTweet(String tweetid) {
+		/*
+		 * Selector selector = makeSel(); List<Column> tweetcols; try {
+		 * tweetcols = selector.getColumnsFromRow(tweetid, TWEETS, SPall(),
+		 * RCL); } catch (Exception e) {
+		 * log.error("Could not locate tweet for id: " + tweetid); return null;
+		 * }
+		 */
+		// maketweet from cols and return
+		// return makeTweet(tweetid.getBytes(),tweetcols);
+
+		Map<String, String> map = cassandra.listColumns(tweetid, TWEETS);
+
+		return new Tweet(	tweetid.getBytes(),
+							map.get("uname"),
+							map.get("body"));
+	}
+
+	public List<Tweet> getTweetsForTweetids(List<String> tweetids) {
+
+		Selector selector = makeSel();
+		Map<Bytes, List<Column>> data;
+		List<Tweet> tweets = new ArrayList<Tweet>();
+		List<Bytes> tweetBytes = new ArrayList<Bytes>();
+		for (String tweetid : tweetids) {
+			tweetBytes.add(Bytes.fromUTF8(tweetid));
+		}
+
+		try {
+			data =
+
+			selector.getColumnsFromRows(TWEETS, tweetBytes, SPall(), RCL);
+		} catch (Exception e) {
+			log.error("Cannot get tweets for tweetids: " + tweetids);
+			return tweets;
+		}
+		// loop maketweet from cols and return for
+		for (Map.Entry<Bytes, List<Column>> datarow : data.entrySet()) {
+			tweets.add(makeTweet(datarow.getKey()
+										.toByteArray(), datarow.getValue()));
+		}
+		return tweets;
+
+		// ArrayList<Tweet> tweets = new ArrayList<Tweet>();
+		//
+		// for (String tweetid : tweetids) {
+		// tweets.add(getTweet(tweetid));
+		// }
+		//
+		// return tweets;
+	}
+
+	// Data Writing
+	public void saveUser(User user) {
+		cassandra.updateColumn(	bToS(user.getKey()),
+								user.getPassword(),
+								"password",
+								USERS);
+	}
+
+	public void saveTweet(Tweet tweet) {
+		/*
+		 * long timestamp = System.currentTimeMillis(); Mutator mutator =
+		 * makeMut();
+		 * 
+		 * //Insert the tweet into tweets cf String key = bToS(tweet.getKey());
+		 * mutator.writeColumn(key, TWEETS,
+		 * mutator.newColumn("uname",tweet.getUname()));
+		 * mutator.writeColumn(key, TWEETS,
+		 * mutator.newColumn("body",tweet.getBody())); //Insert into the user's
+		 * timeline mutator.writeColumn(tweet.getUname(), USERLINE,
+		 * mutator.newColumn(NumberHelper.toBytes(timestamp), key)); //Insert
+		 * into the public timeline mutator.writeColumn("!PUBLIC!", USERLINE,
+		 * mutator.newColumn(NumberHelper.toBytes(timestamp), key)); //Insert
+		 * into all followers streams ArrayList<String> followerUnames = new
+		 * ArrayList<String>(getFollowerUnames(tweet.getUname()));
+		 * followerUnames.add(tweet.getUname()); for (String follower :
+		 * followerUnames) { mutator.writeColumn(follower, TIMELINE,
+		 * mutator.newColumn(NumberHelper.toBytes(timestamp), key)); } try {
+		 * mutator.execute(WCL); } catch (Exception e) {
+		 * log.error("Unable to save tweet: " + tweet.getUname() + ": " +
+		 * tweet.getBody()); }
+		 */
+
+		long timestamp = System.currentTimeMillis();
+		String key = bToS(tweet.getKey());
+		cassandra.updateColumn(key, tweet.getUname(), "uname", TWEETS);
+		cassandra.updateColumn(key, tweet.getBody(), "body", TWEETS);
+		cassandra.updateColumn(	tweet.getUname(),
+								key,
+								String.valueOf(timestamp),
+								USERLINE);
+		cassandra.updateColumn(	"!PUBLIC!",
+								key,
+								String.valueOf(timestamp),
+								USERLINE);
+
+		ArrayList<String> followerUnames = new ArrayList<String>(getFollowerUnames(tweet.getUname()));
+		for (String follower : followerUnames) {
+			cassandra.updateColumn(	follower,
+									key,
+									String.valueOf(timestamp),
+									TIMELINE);
+		}
+	}
+
+	public void addFriends(String from_uname, List<String> to_unames) {
+		long timestamp = System.currentTimeMillis();
+		Mutator mutator = makeMut();
+		ArrayList<Column> friends = new ArrayList<Column>();
+		for (String uname : to_unames) {
+			friends.add(mutator.newColumn(uname, String.valueOf(timestamp)));
+			mutator.writeColumn(FOLLOWERS,
+								uname,
+								mutator.newColumn(	from_uname,
+													String.valueOf(timestamp)));
+		}
+		mutator.writeColumns(FRIENDS, from_uname, friends);
+		try {
+			mutator.execute(WCL);
+		} catch (Exception e) {
+			log.error("Unable to add friendship from: " + from_uname + ", to: "
+					+ to_unames);
+		}
+	}
+
+	public void removeFriends(String from_uname, List<String> to_unames) {
+
+		Mutator mutator = makeMut();
+		for (String uname : to_unames) {
+			mutator.deleteColumn(from_uname, FRIENDS, uname);
+			mutator.deleteColumn(uname, FOLLOWERS, from_uname);
+		}
+		try {
+			mutator.execute(WCL);
+		} catch (Exception e) {
+			log.error("Unable to remove friendship from: " + from_uname
+					+ ", to: " + to_unames);
+		}
+
+	}
 
 }
