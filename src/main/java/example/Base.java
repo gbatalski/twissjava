@@ -1,8 +1,11 @@
 package example;
 
-import example.models.Timeline;
-import example.models.Tweet;
-import example.models.User;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.cassandra.thrift.ConsistencyLevel;
 import org.apache.wicket.markup.html.IHeaderResponse;
 import org.apache.wicket.markup.html.WebPage;
@@ -13,11 +16,9 @@ import org.apache.wicket.request.resource.PackageResourceReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import example.models.Timeline;
+import example.models.Tweet;
+import example.models.User;
 
 /**
  * Base contains both the default header/footer things for the UI as
@@ -347,20 +348,20 @@ public abstract class Base extends WebPage {
     }
 
     public void addFriends(String from_uname, List<String> to_unames) {
-        /*long timestamp = System.currentTimeMillis();
-        Mutator mutator = makeMut();
-        ArrayList<Column> friends = new ArrayList<Column>();
+		long timestamp = System.currentTimeMillis();
+
         for (String uname : to_unames) {
-            friends.add(mutator.newColumn(uname, String.valueOf(timestamp)));
-            mutator.writeColumn(uname, FOLLOWERS, mutator.newColumn(from_uname, String.valueOf(timestamp)));
+			cassandra.updateColumn(	uname,
+									String.valueOf(timestamp),
+									from_uname,
+									FOLLOWERS);
+			cassandra.updateColumn(	from_uname,
+									String.valueOf(timestamp),
+									uname,
+									FRIENDS);
+
         }
-        mutator.writeColumns(from_uname, FRIENDS, friends);
-        try {
-            mutator.execute(WCL);
-        }
-        catch (Exception e) {
-            log.error("Unable to add friendship from: " + from_uname + ", to: " + to_unames);
-        }*/
+
     }
 
     public void removeFriends(String from_uname, List<String> to_unames) {

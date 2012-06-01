@@ -1,16 +1,20 @@
 package example;
 
-import example.models.User;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.form.TextField;
+import org.apache.wicket.markup.html.link.Link;
+import org.apache.wicket.markup.html.list.ListItem;
+import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.protocol.http.WebSession;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
 
-import java.util.ArrayList;
-import java.util.List;
+import example.models.User;
 
 /**
  * AddFriends has a query section for finding a user that may exist
@@ -66,6 +70,39 @@ public class AddFriends extends Base {
                 actiontext = "Add Friend ";
             }
         }
+        
+        if (friendUnames.size() > 0) {
+            add(new ListView<String>("friendlist", friendUnames) {
+                /**
+				 * 
+				 */
+				private static final long serialVersionUID = 2976401971784724238L;
+
+				@Override
+                public void populateItem(final ListItem<String> listitem) {
+                    listitem.add(new Link("link") {
+                        /**
+						 * 
+						 */
+						private static final long serialVersionUID = 726753731699398445L;
+
+						@Override
+                        public void onClick() {
+                            PageParameters p = new PageParameters();
+							p.add("username", listitem.getModel()
+														.getObject());
+                            setResponsePage(Publicline.class, p);
+                        }
+					}.add(new Label("tuname",
+									listitem.getModel()
+											.getObject())));
+					listitem.add(new Label(	"tbody",
+											": " + listitem.getModel()
+															.getObject()));
+                }
+            }).setVersioned(false);
+		}
+        
         aff.add(new Label("actionname", actiontext));
         //TODO : I really don't like not having it on the button itself. ;_;
         action.add(aff);
