@@ -1,20 +1,38 @@
 package example;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+
 import me.prettyprint.cassandra.serializers.StringSerializer;
 import me.prettyprint.cassandra.service.CassandraHostConfigurator;
 import me.prettyprint.cassandra.service.ThriftCfDef;
 import me.prettyprint.hector.api.Cluster;
 import me.prettyprint.hector.api.Keyspace;
-import me.prettyprint.hector.api.beans.*;
+import me.prettyprint.hector.api.beans.ColumnSlice;
+import me.prettyprint.hector.api.beans.HColumn;
+import me.prettyprint.hector.api.beans.HSuperColumn;
+import me.prettyprint.hector.api.beans.OrderedRows;
+import me.prettyprint.hector.api.beans.Row;
 import me.prettyprint.hector.api.ddl.ColumnFamilyDefinition;
 import me.prettyprint.hector.api.ddl.ColumnType;
 import me.prettyprint.hector.api.ddl.KeyspaceDefinition;
 import me.prettyprint.hector.api.factory.HFactory;
 import me.prettyprint.hector.api.mutation.Mutator;
-import me.prettyprint.hector.api.query.*;
-import org.apache.log4j.Logger;
+import me.prettyprint.hector.api.query.ColumnQuery;
+import me.prettyprint.hector.api.query.QueryResult;
+import me.prettyprint.hector.api.query.RangeSlicesQuery;
+import me.prettyprint.hector.api.query.RangeSubSlicesQuery;
+import me.prettyprint.hector.api.query.SliceQuery;
+import me.prettyprint.hector.api.query.SubColumnQuery;
+import me.prettyprint.hector.api.query.SubCountQuery;
+import me.prettyprint.hector.api.query.SubSliceQuery;
+import me.prettyprint.hector.api.query.SuperColumnQuery;
 
-import java.util.*;
+import org.apache.log4j.Logger;
 
 /**
  * Nebula Cloud Platform
@@ -31,7 +49,7 @@ public class CassandraService {
     private static final int MAX_ROW_COUNT = 1000;
     private static final int MAX_COLUMN_COUNT = 1000;
     private static final StringSerializer SE = StringSerializer.get();
-    private Cluster _cluster;
+    private final Cluster _cluster;
     private Keyspace _keyspace = null;
 
     public CassandraService(final String hostPort,
@@ -40,8 +58,7 @@ public class CassandraService {
 
         CassandraHostConfigurator cassandraHostConfigurator =
                 new CassandraHostConfigurator(hostPort);
-        cassandraHostConfigurator.setMaxActive(100);
-        cassandraHostConfigurator.setMaxIdle(10);
+		cassandraHostConfigurator.setMaxActive(100);
         cassandraHostConfigurator.setCassandraThriftSocketTimeout(CASSANDRA_THRIFT_SOCKET_TIMEOUT);
         cassandraHostConfigurator.setMaxWaitTimeWhenExhausted(MAXWAITTIMEWHENEXHAUSTED);
         cassandraHostConfigurator.setRetryDownedHosts(true);
