@@ -3,13 +3,13 @@
 <body>
   <wicket:extend>
     <h2 class="grid_4 suffix_5">Find Friends</h2>
-    <div class="grid_9 alpha">
+    <div class="grid_6 alpha">
         <form method="GET" class="grid_6" wicket:id='friendfinder'>
             <input wicket:id="q" type="text"/>
             <input type="submit" value="Search" />
         </form>
         
-        <div wicket:id="friendlist" class="grid_9 alpha">
+        <div wicket:id="friendlist" class="grid_6 alpha">
 	      <ul>
 	        <li>
 	          <a href="#" wicket:id="link"><span wicket:id="tuname">name</span></a><span wicket:id="tbody">body</span>
@@ -22,7 +22,7 @@
         </div>
         <div class="grid_6" wicket:id="action">
             <form wicket:id='actionfriend'>
-                <span wicket:id="actionname">Click this</span><input type="submit" value=">>" />
+                <span wicket:id="actionname">Click this</span><input type="submit" value="&gt;&gt;" />
             </form>
         </div>
     </div>

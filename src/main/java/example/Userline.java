@@ -1,7 +1,9 @@
 package example;
 
-import example.models.Timeline;
-import example.models.Tweet;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Form;
@@ -13,9 +15,8 @@ import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.protocol.http.WebSession;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import example.models.Timeline;
+import example.models.Tweet;
 
 /**
  * This is the typical twitter page. A form for submitting a 140-character
@@ -27,7 +28,7 @@ public class Userline extends HomePage {
 	 * 
 	 */
 	private static final long serialVersionUID = -4893440430661022168L;
-	private String username;
+	private final String username;
     private Long nextpage;
 
     public Userline(final PageParameters parameters) {
@@ -66,7 +67,7 @@ public class Userline extends HomePage {
 
 				@Override
                 public void populateItem(final ListItem<Tweet> listitem) {
-                    listitem.add(new Link("link") {
+					listitem.add(new Link<String>("link") {
                         /**
 						 * 
 						 */
@@ -115,7 +116,7 @@ public class Userline extends HomePage {
 
 				@Override
                 public void populateItem(final ListItem<String> listitem) {
-                    listitem.add(new Link("link") {
+					listitem.add(new Link<String>("link") {
                         /**
 						 * 
 						 */
@@ -142,7 +143,7 @@ public class Userline extends HomePage {
         }
     }
 
-    private class PageForm extends Form {
+	private class PageForm extends Form<PageForm> {
         /**
 		 * 
 		 */
@@ -152,13 +153,13 @@ public class Userline extends HomePage {
         }
         @Override
         public void onSubmit() {
-            PageParameters p = new PageParameters();
-            p.add("nextpage", nextpage);
-            setResponsePage(getPage().getClass(), p);
+
+			setResponsePage(getPage().getClass(),
+							new PageParameters().add("nextpage", nextpage));
         }
     }
 
-    private class TweetForm extends Form {
+	private class TweetForm extends Form<TweetForm> {
         /**
 		 * 
 		 */
@@ -167,7 +168,8 @@ public class Userline extends HomePage {
 
         public TweetForm(String id) {
             super(id);
-            add(new TextArea("tweetbody", new PropertyModel(this,"tweetbody")));
+			add(new TextArea<String>(	"tweetbody",
+								PropertyModel.<String> of(this, "tweetbody")));
         }
         @Override
         public void onSubmit() {

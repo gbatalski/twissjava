@@ -1,7 +1,8 @@
 package example;
 
-import example.models.Timeline;
-import example.models.Tweet;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Form;
@@ -10,8 +11,8 @@ import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
 
-import java.util.ArrayList;
-import java.util.List;
+import example.models.Timeline;
+import example.models.Tweet;
 
 /**
  * This is the default home page when not logged in.
@@ -55,7 +56,7 @@ public class Publicline extends HomePage {
 
 				@Override
                 public void populateItem(final ListItem<Tweet> listitem) {
-                    listitem.add(new Link("link") {
+					listitem.add(new Link<String>("link") {
                         /**
 						 * 
 						 */
@@ -63,9 +64,12 @@ public class Publicline extends HomePage {
 
 						@Override
                         public void onClick() {
-                            PageParameters p = new PageParameters();
-                            p.add("username", listitem.getModel().getObject().getUname());
-                            setResponsePage(Publicline.class, p);
+
+							setResponsePage(Publicline.class,
+											new PageParameters().add(	"username",
+																		listitem.getModel()
+																				.getObject()
+																				.getUname()));
                         }
                     }.add(new Label("tuname",listitem.getModel().getObject().getUname())));
                     listitem.add(new Label("tbody", ": " + listitem.getModel().getObject().getBody()));
@@ -104,7 +108,7 @@ public class Publicline extends HomePage {
 
 				@Override
                 public void populateItem(final ListItem<String> listitem) {
-                    listitem.add(new Link("link") {
+					listitem.add(new Link<String>("link") {
                         /**
 						 * 
 						 */
@@ -131,7 +135,7 @@ public class Publicline extends HomePage {
         }
     }
 
-    private class PageForm extends Form {
+	private class PageForm extends Form<PageForm> {
         /**
 		 * 
 		 */
@@ -141,9 +145,9 @@ public class Publicline extends HomePage {
         }
         @Override
         public void onSubmit() {
-            PageParameters p = new PageParameters();
-            p.add("nextpage", nextpage);
-            setResponsePage(getPage().getClass(), p);
+
+			setResponsePage(getPage().getClass(),
+							new PageParameters().add("nextpage", nextpage));
         }
     }
 }

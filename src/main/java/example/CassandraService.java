@@ -1,7 +1,8 @@
 package example;
 
+import static com.google.common.collect.ImmutableList.of;
+
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,7 +34,6 @@ import me.prettyprint.hector.api.query.SubSliceQuery;
 import me.prettyprint.hector.api.query.SuperColumnQuery;
 
 import org.apache.log4j.Logger;
-
 /**
  * Nebula Cloud Platform
  * Copyright 2010 Innovation Works Limited, All Rights Reserved.
@@ -347,9 +347,13 @@ public class CassandraService {
     {
         Mutator<String> mutator = HFactory.createMutator(_keyspace, SE);
 
-        // insert (row, columnfamily, column(key, value));
+		// insert (row, column family, column(key, value));
         mutator.insert(key, columnFamily, HFactory.createSuperColumn(superColumn,
-                Arrays.asList(HFactory.createStringColumn(columnName, value)), SE, SE, SE));
+													of(HFactory.createStringColumn(	columnName,
+																					value)),
+													SE,
+													SE,
+													SE));
     }
 
     /**

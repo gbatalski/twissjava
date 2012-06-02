@@ -1,5 +1,7 @@
 package example;
 
+import static com.google.common.collect.ImmutableList.of;
+
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -7,14 +9,17 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cassandra.thrift.ConsistencyLevel;
-import org.apache.wicket.markup.html.IHeaderResponse;
+import org.apache.wicket.markup.head.CssReferenceHeaderItem;
+import org.apache.wicket.markup.head.IHeaderResponse;
 import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.protocol.http.WebSession;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
-import org.apache.wicket.request.resource.PackageResourceReference;
+import org.apache.wicket.request.resource.CssResourceReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Function;
 
 import example.models.Timeline;
 import example.models.Tweet;
@@ -47,11 +52,6 @@ public abstract class Base extends WebPage {
     //UI settings
     public Base(final PageParameters parameters) {
 
-        /*add(CSSPackageResource.getHeaderContribution(Base.class, "960.css"));
-        add(CSSPackageResource.getHeaderContribution(Base.class, "reset.css"));
-        add(CSSPackageResource.getHeaderContribution(Base.class, "screen.css"));
-        add(CSSPackageResource.getHeaderContribution(Base.class, "text.css"));*/
-
         String condauth = "Log";
         String username = ((TwissSession)WebSession.get()).getUname();
         if (username == null) {
@@ -64,15 +64,17 @@ public abstract class Base extends WebPage {
     }
 
     @Override
-    public void renderHead(IHeaderResponse response) {
-        response.renderCSSReference(new PackageResourceReference(Base.class,
-                "960.css"));
-        response.renderCSSReference(new PackageResourceReference(Base.class,
-                "reset.css"));
-        response.renderCSSReference(new PackageResourceReference(Base.class,
-                "screen.css"));
-        response.renderCSSReference(new PackageResourceReference(Base.class,
-                "text.css"));
+	public void renderHead(final IHeaderResponse response) {
+		new Function<List<String>, Void>() {
+			@Override
+			public Void apply(List<String> input) {
+				for (String css : input)
+					response.render(CssReferenceHeaderItem.forReference(new CssResourceReference(	Base.class,
+																									css
+																											+ ".css")));
+				return null;
+			}
+		}.apply(of("960", "reset", "screen", "text"));
     }
 
     //
@@ -83,36 +85,9 @@ public abstract class Base extends WebPage {
     private String bToS(byte[] bytes) {
         return new String(bytes, Charset.forName("UTF-8"));
     }
-    /*private Selector makeSel() {
-        return Pelops.createSelector("Twissjava Pool", "Twissandra");
-    }
-    private Mutator makeMut() {
-        return Pelops.createMutator("Twissjava Pool", "Twissandra");
-    }
-    private SlicePredicate SPall(){
-        return Selector.newColumnsPredicateAll(false,5000);
-    }
-    private Tweet makeTweet(byte[] key, List<Column> tweetcols) {
-        return new Tweet(key, bToS(tweetcols.get(1).value), bToS(tweetcols.get(0).value));
-    }  */
-
 
     //Helpers
     private List<String> getFriendOrFollowerUnames(String COL_FAM, String uname, int count) {
-        /*Selector selector = makeSel();
-        List<Column> row;
-        try {
-            row = selector.getColumnsFromRow(uname, COL_FAM, Selector.newColumnsPredicateAll(false, count), RCL);
-        }
-        catch (Exception e) {
-            log.error("No record found for uname: " + uname + ", COL_FAM: " + COL_FAM);
-            return Collections.emptyList();
-        }
-        ArrayList<String> unames = new ArrayList<String>(row.size());
-        for(Column c : row) {
-            unames.add(bToS(c.name));
-        }
-        return unames;*/
 
         Map<String, String> map = cassandra.listColumns(uname, COL_FAM, null, count);
         return Arrays.asList(map.keySet().toArray(new String[] {}));
@@ -219,6 +194,7 @@ public abstract class Base extends WebPage {
             users.add(new User(row.getKey().getBytes(), bToS(row.getValue().get(0).value)));
         }
         return users;*/
+		// TODO:
         return null;
     }
 
@@ -261,17 +237,6 @@ public abstract class Base extends WebPage {
     }
 
     public Tweet getTweet(String tweetid) {
-        /*Selector selector = makeSel();
-        List<Column> tweetcols;
-        try {
-            tweetcols = selector.getColumnsFromRow(tweetid, TWEETS, SPall(), RCL);
-        }
-        catch (Exception e) {
-            log.error("Could not locate tweet for id: " + tweetid);
-            return null;
-        }                                */
-        //maketweet from cols and return
-        //return makeTweet(tweetid.getBytes(),tweetcols);
 
         Map<String, String> map = cassandra.listColumns(tweetid, TWEETS);
 
@@ -279,23 +244,7 @@ public abstract class Base extends WebPage {
     }
 
     public List<Tweet> getTweetsForTweetids(List<String> tweetids) {
-        /*Selector selector = makeSel();
-        Map<String, List<Column>> data;
-        ArrayList<Tweet> tweets = new ArrayList<Tweet>();
-        try {
-            data = selector.getColumnsFromRows(tweetids, TWEETS, SPall(), RCL);
-        }
-        catch (Exception e) {
-            log.error("Cannot get tweets for tweetids: " + tweetids);
-            return tweets;
-        }
-        //loop maketweet from cols and return
-        for (Map.Entry<String, List<Column>> datarow : data.entrySet()) {
-            tweets.add(makeTweet(datarow.getKey().getBytes(), datarow.getValue()));
-        }
-        return tweets;*/
-
-        ArrayList<Tweet> tweets = new ArrayList<Tweet>();
+		ArrayList<Tweet> tweets = new ArrayList<Tweet>();
 
         for (String tweetid : tweetids) {
             tweets.add(getTweet(tweetid));
@@ -310,29 +259,7 @@ public abstract class Base extends WebPage {
         cassandra.updateColumn(bToS(user.getKey()), user.getPassword(), "password", USERS);
     }
     public void saveTweet(Tweet tweet) {
-        /*long timestamp = System.currentTimeMillis();
-        Mutator mutator = makeMut();
 
-        //Insert the tweet into tweets cf
-        String key = bToS(tweet.getKey());
-        mutator.writeColumn(key, TWEETS, mutator.newColumn("uname",tweet.getUname()));
-        mutator.writeColumn(key, TWEETS, mutator.newColumn("body",tweet.getBody()));
-        //Insert into the user's timeline
-        mutator.writeColumn(tweet.getUname(), USERLINE, mutator.newColumn(NumberHelper.toBytes(timestamp), key));
-        //Insert into the public timeline
-        mutator.writeColumn("!PUBLIC!", USERLINE, mutator.newColumn(NumberHelper.toBytes(timestamp), key));
-        //Insert into all followers streams
-        ArrayList<String> followerUnames = new ArrayList<String>(getFollowerUnames(tweet.getUname()));
-        followerUnames.add(tweet.getUname());
-        for (String follower : followerUnames) {
-            mutator.writeColumn(follower, TIMELINE, mutator.newColumn(NumberHelper.toBytes(timestamp), key));
-        }
-        try {
-            mutator.execute(WCL);
-        }
-        catch (Exception e) {
-            log.error("Unable to save tweet: " + tweet.getUname() + ": " + tweet.getBody());
-        }*/
 
         long timestamp = System.currentTimeMillis();
         String key = bToS(tweet.getKey());
@@ -376,6 +303,7 @@ public abstract class Base extends WebPage {
         catch (Exception e) {
             log.error("Unable to remove friendship from: " + from_uname + ", to: " + to_unames);
         }*/
+		// TODO:
     }
 
 }

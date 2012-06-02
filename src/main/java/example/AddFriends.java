@@ -58,7 +58,7 @@ public class AddFriends extends Base {
 
         add(new Label("flash", getFlashMsg()));
 
-        Form aff = new ActionFriendForm("actionfriend");
+		Form<ActionFriendForm> aff = new ActionFriendForm("actionfriend");
 
         String actiontext = "";
         List<String> friendUnames = getFriendUnames(username);
@@ -71,7 +71,7 @@ public class AddFriends extends Base {
             }
         }
         
-        if (friendUnames.size() > 0) {
+        
             add(new ListView<String>("friendlist", friendUnames) {
                 /**
 				 * 
@@ -80,7 +80,7 @@ public class AddFriends extends Base {
 
 				@Override
                 public void populateItem(final ListItem<String> listitem) {
-                    listitem.add(new Link("link") {
+					listitem.add(new Link<String>("link") {
                         /**
 						 * 
 						 */
@@ -88,10 +88,11 @@ public class AddFriends extends Base {
 
 						@Override
                         public void onClick() {
-                            PageParameters p = new PageParameters();
-							p.add("username", listitem.getModel()
-														.getObject());
-                            setResponsePage(Publicline.class, p);
+
+							setResponsePage(Publicline.class,
+											new PageParameters().add(	"username",
+																		listitem.getModel()
+																				.getObject()));
                         }
 					}.add(new Label("tuname",
 									listitem.getModel()
@@ -101,7 +102,7 @@ public class AddFriends extends Base {
 															.getObject()));
                 }
             }).setVersioned(false);
-		}
+
         
         aff.add(new Label("actionname", actiontext));
         //TODO : I really don't like not having it on the button itself. ;_;
@@ -135,7 +136,7 @@ public class AddFriends extends Base {
         return "";
     }
 
-    private class FriendForm extends Form {
+	private class FriendForm extends Form<FriendForm> {
         /**
 		 * 
 		 */
@@ -144,22 +145,22 @@ public class AddFriends extends Base {
 
         public FriendForm(String id) {
             super(id);
-            add(new TextField("q", new PropertyModel(this,"q")));
+			add(new TextField<String>(	"q",
+										PropertyModel.<String> of(this,
+															"q")));
         }
         @Override
         public void onSubmit() {
             User test = getUserByUsername(q);
             if (test == null) {
-                PageParameters p = new PageParameters();
-                p.add("query",q);
-                p.add("found",false);
-                setResponsePage(getPage().getClass(), p);
+                setResponsePage(getPage().getClass(),new PageParameters().add("query",q)
+													.add("found", false));
             }
             else {
-                PageParameters p = new PageParameters();
-                p.add("query",q);
-                p.add("found",true);
-                setResponsePage(getPage().getClass(), p);
+
+				setResponsePage(getPage().getClass(),
+								new PageParameters().add("query", q)
+													.add("found", true));
             }
         }
     }
@@ -168,7 +169,7 @@ public class AddFriends extends Base {
     //<p>There was nobody with username {{ q }}</p>
     //<p>Enter a username above to see if they are on the site!</p>
 
-    private class ActionFriendForm extends Form {
+	private class ActionFriendForm extends Form<ActionFriendForm> {
         /**
 		 * 
 		 */
@@ -183,13 +184,15 @@ public class AddFriends extends Base {
                 List<String> friendname = new ArrayList<String>();
                 friendname.add(query);
                 removeFriends(username, friendname);
-                setResponsePage(getPage().getClass(), new PageParameters("act=false"));
+				setResponsePage(getPage().getClass(),
+								new PageParameters().add("act", false));
             }
             else {
                 List<String> friendname = new ArrayList<String>();
                 friendname.add(query);
                 addFriends(username, friendname);
-                setResponsePage(getPage().getClass(), new PageParameters("act=true"));
+				setResponsePage(getPage().getClass(),
+								new PageParameters().add("act", true));
             }
         }
     }
