@@ -1,9 +1,13 @@
 package example;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
+import org.apache.wicket.RestartResponseException;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Form;
@@ -14,6 +18,9 @@ import org.apache.wicket.markup.html.list.ListView;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.protocol.http.WebSession;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
+
+import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableSortedSet;
 
 import example.models.Timeline;
 import example.models.Tweet;
@@ -31,23 +38,74 @@ public class Userline extends HomePage {
 	private final String username;
     private Long nextpage;
 
+	private enum UserListType {
+		FRIEND,
+		FOLLOWER
+	};
+
+	private static final int MAX_USER_LIST = 3;
+
     public Userline(final PageParameters parameters) {
         super(parameters);
         nextpage = parameters.get("nextpage").toLong(0);
         username = ((TwissSession) WebSession.get()).getUname();
-        setup();
-        if (username == null) {
-            //setRedirect(true);
 
-            setResponsePage(Publicline.class);
+        if (username == null) {
+			throw new RestartResponseException(Publicline.class);
         }
         else {
-            //setup();
+			setup();
         }
     }
 
-    private void setup() {
-        add(new TweetForm("poster"));
+	private String getUsersLabel(String username, UserListType type) {
+		checkNotNull(username);
+		int counter = 0;
+		Set<String> users = null;
+
+		if (type == UserListType.FRIEND) {
+			counter = (int) getFriendsCount(username);
+			users = ImmutableSortedSet.copyOf(getFriendUnames(username, MAX_USER_LIST));
+		} else if (type == UserListType.FOLLOWER) {
+			counter = (int) getFollowersCount(username);
+			users = ImmutableSortedSet.copyOf(getFollowerUnames(username, MAX_USER_LIST));
+		} else {
+			throw new IllegalArgumentException(type + " is not a valid "
+					+ UserListType.class.getSimpleName());
+		}
+
+		StringBuilder s = new StringBuilder();
+		s.append(counter);
+
+		if (counter > 0) {
+
+			s.append(" (");
+			s.append(Joiner.on(',')
+							.join(users));
+
+			int remaining = counter - users.size();
+
+			if (remaining > 0) {
+				s.append(" and ");
+				s.append(remaining);
+				s.append(" more");
+			}
+
+			s.append(")");
+		}
+
+		return s.toString();
+	}
+
+	private void setup() {
+		String friendsLabel = getUsersLabel(username, UserListType.FRIEND);
+		String followersLabel = getUsersLabel(username, UserListType.FOLLOWER);
+		add(new TweetForm("poster"));
+		add(new Label(	"friends",
+						friendsLabel));
+		add(new Label(	"followers",
+						followersLabel));
+
 
         Timeline timeline = getUserline(username, nextpage);
         List<Tweet> tweets;//timeline.getView();
@@ -173,7 +231,11 @@ public class Userline extends HomePage {
         }
         @Override
         public void onSubmit() {
-            saveTweet(new Tweet(UUID.randomUUID().toString().getBytes(), username, tweetbody));
+			saveTweet(new Tweet(UUID.randomUUID()
+									.toString()
+									.getBytes(),
+								username,
+								tweetbody));
             setResponsePage(getPage().getClass());
         }
     }

@@ -1,12 +1,16 @@
 package example;
 
 import static com.google.common.collect.ImmutableList.of;
+import static example.services.db.cassandra.CassandraService.SE;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
+import me.prettyprint.hector.api.factory.HFactory;
+import me.prettyprint.hector.api.mutation.Mutator;
 
 import org.apache.cassandra.thrift.ConsistencyLevel;
 import org.apache.wicket.markup.head.CssReferenceHeaderItem;
@@ -16,14 +20,17 @@ import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.protocol.http.WebSession;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.apache.wicket.request.resource.CssResourceReference;
+import org.apache.wicket.util.lang.Args;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Function;
+import com.google.inject.Inject;
 
 import example.models.Timeline;
 import example.models.Tweet;
 import example.models.User;
+import example.services.db.cassandra.CassandraService;
 
 /**
  * Base contains both the default header/footer things for the UI as
@@ -43,11 +50,13 @@ public abstract class Base extends WebPage {
     public final static String USERS = "User";
     public final static String FRIENDS = "Friends";
     public final static String FOLLOWERS = "Followers";
+    public final static String MISC_COUNTS = "MiscCounts";
     public final static String TWEETS = "Tweet";
     public final static String TIMELINE = "Timeline";
     public final static String USERLINE = "Userline";
 
-    public static CassandraService cassandra;
+	@Inject
+	public transient CassandraService cassandra;
 
     //UI settings
     public Base(final PageParameters parameters) {
@@ -155,7 +164,8 @@ public abstract class Base extends WebPage {
 
 
     //Data Reading
-    public User getUserByUsername(String uname) {
+	public User getUserByUsername(String uname) {
+		Args.notNull(uname, "Name");
         String password = cassandra.readColumn(uname, "password", USERS);
 
         if (null == password || password.equals("")) {
@@ -214,6 +224,20 @@ public abstract class Base extends WebPage {
         return getUsersForUnames(followerUnames);
     }
 
+	public long getFriendsCount(String uname) {
+		return getCounter(uname, "friends");
+	}
+
+	public long getFollowersCount(String uname) {
+		return getCounter(uname, "followers");
+	}
+
+	public long getCounter(String uname, String counter) {
+		return cassandra.countColumns(uname, counter, MISC_COUNTS);
+        
+    }
+
+
     public Timeline getTimeline(String uname) {
         return getTimeline(uname, "", 40);
     }
@@ -240,7 +264,9 @@ public abstract class Base extends WebPage {
 
         Map<String, String> map = cassandra.listColumns(tweetid, TWEETS);
 
-        return new Tweet(tweetid.getBytes(), map.get("uname"), map.get("body"));
+		return new Tweet(	tweetid.getBytes(),
+							map.get("uname"),
+							map.get("body"));
     }
 
     public List<Tweet> getTweetsForTweetids(List<String> tweetids) {
@@ -276,34 +302,34 @@ public abstract class Base extends WebPage {
 
     public void addFriends(String from_uname, List<String> to_unames) {
 		long timestamp = System.currentTimeMillis();
-
-        for (String uname : to_unames) {
-			cassandra.updateColumn(	uname,
-									String.valueOf(timestamp),
-									from_uname,
-									FOLLOWERS);
-			cassandra.updateColumn(	from_uname,
-									String.valueOf(timestamp),
-									uname,
-									FRIENDS);
-
-        }
+			Mutator<String> mutator = cassandra.getMutator();
+			for (String uname : to_unames) {
+				mutator.addInsertion(from_uname, FRIENDS,HFactory.createStringColumn(uname, String.valueOf(timestamp)) )
+					.addInsertion(	uname,
+									FOLLOWERS,
+									HFactory.createStringColumn(from_uname,
+																String.valueOf(timestamp)))
+					.addCounter(from_uname,
+								MISC_COUNTS,
+								HFactory.createCounterColumn("friends", 1))
+					.addCounter(uname,
+								MISC_COUNTS,
+								HFactory.createCounterColumn("followers", 1));
+			}
+		mutator.execute();
 
     }
 
     public void removeFriends(String from_uname, List<String> to_unames) {
-        /*Mutator mutator = makeMut();
-        for (String uname : to_unames) {
-            mutator.deleteColumn(from_uname, FRIENDS, uname);
-            mutator.deleteColumn(uname, FOLLOWERS, from_uname);
-        }
-        try {
-            mutator.execute(WCL);
-        }
-        catch (Exception e) {
-            log.error("Unable to remove friendship from: " + from_uname + ", to: " + to_unames);
-        }*/
-		// TODO:
+
+		Mutator<String> mutator = cassandra.getMutator();
+		for (String uname : to_unames) {
+			mutator.addDeletion(from_uname, FRIENDS, uname, SE)
+					.addDeletion(uname, FOLLOWERS, from_uname, SE);
+			mutator.decrementCounter(from_uname, MISC_COUNTS, "friends", 1);
+			mutator.decrementCounter(uname, MISC_COUNTS, "followers", 1);
+		}
+		mutator.execute();
     }
 
 }
