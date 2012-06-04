@@ -209,7 +209,10 @@
 		<appender-ref ref="stdout" />
 	</logger>
 
-
+    <logger name="me.prettyprint.cassandra">
+        <level value="INFO" />
+    </logger>
+	
 	
 	
 	<!--
