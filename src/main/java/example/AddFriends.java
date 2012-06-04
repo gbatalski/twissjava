@@ -6,10 +6,11 @@ import java.util.List;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Form;
-import org.apache.wicket.markup.html.form.TextField;
+import org.apache.wicket.markup.html.form.RequiredTextField;
 import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
+import org.apache.wicket.markup.html.panel.FeedbackPanel;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.protocol.http.WebSession;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
@@ -145,9 +146,9 @@ public class AddFriends extends Base {
 
         public FriendForm(String id) {
             super(id);
-			add(new TextField<String>(	"q",
+			add(new RequiredTextField<String>(	"q",
 										PropertyModel.<String> of(this,
-															"q")));
+																			"q"))).add(new FeedbackPanel("feedback"));
         }
         @Override
         public void onSubmit() {
