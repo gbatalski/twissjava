@@ -1,0 +1,5 @@
+!!example.guice.module.CassandraModule$CassandraStorage
+cluster: Nebula Cassandra Cluster
+hosts: [localhost]
+keyspace: Twissjava
+port: 9160
