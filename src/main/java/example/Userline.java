@@ -3,11 +3,13 @@ package example;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
 import org.apache.wicket.RestartResponseException;
+import org.apache.wicket.datetime.markup.html.basic.DateLabel;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Form;
@@ -15,6 +17,8 @@ import org.apache.wicket.markup.html.form.TextArea;
 import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
+import org.apache.wicket.markup.html.panel.FeedbackPanel;
+import org.apache.wicket.model.IModel;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.protocol.http.WebSession;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
@@ -139,6 +143,33 @@ public class Userline extends HomePage {
                         }
                     }.add(new Label("tuname",listitem.getModel().getObject().getUname())));
                     listitem.add(new Label("tbody", ": " + listitem.getModel().getObject().getBody()));
+					listitem.add(DateLabel.forDateStyle("datetime",
+															new IModel<Date>() {
+
+																private static final long serialVersionUID = 1L;
+
+																@Override
+																public void detach() {
+																	//
+
+																}
+
+																@Override
+																public void setObject(
+																		Date object) {
+																	//
+
+																}
+
+																@Override
+																public Date getObject() {
+																	return new Date(listitem.getModel()
+																							.getObject()
+																							.getTimestamp());
+
+																}
+														},
+														"SS"));
                 }
             }).setVersioned(false);
             Long linktopaginate = timeline.getNextview();
@@ -185,6 +216,9 @@ public class Userline extends HomePage {
                         }
                     }.add(new Label("tuname","")));
                     listitem.add(new Label("tbody", listitem.getModel().getObject()));
+					listitem.add(new Label(	"datetime",
+											listitem.getModel()
+													.getObject()));
                 }
             }).setVersioned(false);
             add(new WebMarkupContainer("pagedown") {
@@ -226,8 +260,11 @@ public class Userline extends HomePage {
 
         public TweetForm(String id) {
             super(id);
+
 			add(new TextArea<String>(	"tweetbody",
-								PropertyModel.<String> of(this, "tweetbody")));
+										PropertyModel.<String> of(	this,
+																	"tweetbody")).setRequired(true)).add(new FeedbackPanel("feedback"));
+
         }
         @Override
         public void onSubmit() {
@@ -235,7 +272,8 @@ public class Userline extends HomePage {
 									.toString()
 									.getBytes(),
 								username,
-								tweetbody));
+								tweetbody,
+								System.currentTimeMillis()));
             setResponsePage(getPage().getClass());
         }
     }

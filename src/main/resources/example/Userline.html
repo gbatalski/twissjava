@@ -3,6 +3,7 @@
 <body>
   <wicket:extend>
     <form wicket:id="poster">
+      <div wicket:id="feedback"></div>
       <div class="grid_9 alpha">
         <textarea maxlength="140" rows="4" cols="40" type="text" wicket:id="tweetbody"></textarea>
       </div>
@@ -15,7 +16,7 @@
     <div class="grid_9 alpha" wicket:id="tweetlist">
       <ul>
         <li>
-          <a href="#" wicket:id="link"><span wicket:id="tuname">name</span></a><span wicket:id="tbody">body</span>
+          <a href="#" wicket:id="link"><span wicket:id="tuname">name</span></a>&#160;(<span wicket:id="datetime">datetime</span>)&#160;<span wicket:id="tbody">body</span>
         </li>
       </ul>
     </div>

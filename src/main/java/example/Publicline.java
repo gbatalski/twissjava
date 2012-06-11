@@ -1,14 +1,17 @@
 package example;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
+import org.apache.wicket.datetime.markup.html.basic.DateLabel;
 import org.apache.wicket.markup.html.WebMarkupContainer;
 import org.apache.wicket.markup.html.basic.Label;
 import org.apache.wicket.markup.html.form.Form;
 import org.apache.wicket.markup.html.link.Link;
 import org.apache.wicket.markup.html.list.ListItem;
 import org.apache.wicket.markup.html.list.ListView;
+import org.apache.wicket.model.IModel;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
 
 import example.models.Timeline;
@@ -33,10 +36,13 @@ public class Publicline extends HomePage {
         if (username == null) {
             username = "!PUBLIC!";
             add(new Label("h2name", "Public"));
+
         }
         else {
             add(new Label("h2name", username + "'s"));
         }
+		add(new Label(	"counter",
+						String.valueOf(getTweetsCount(username))));
 
         Timeline timeline = getUserline(username, nextpage);
 
@@ -72,7 +78,37 @@ public class Publicline extends HomePage {
 																				.getUname()));
                         }
                     }.add(new Label("tuname",listitem.getModel().getObject().getUname())));
-                    listitem.add(new Label("tbody", ": " + listitem.getModel().getObject().getBody()));
+					listitem.add(new Label(	"tbody",
+											": " + listitem.getModel()
+															.getObject()
+															.getBody()));
+					listitem.add(DateLabel.forDateStyle("datetime",
+												new IModel<Date>() {
+
+													private static final long serialVersionUID = 1L;
+
+													@Override
+													public void detach() {
+														//
+
+													}
+
+													@Override
+													public void setObject(
+															Date object) {
+														//
+
+													}
+
+													@Override
+													public Date getObject() {
+														return new Date(listitem.getModel()
+																				.getObject()
+																				.getTimestamp());
+
+													}
+														},
+														"SS"));
                 }
             }).setVersioned(false);
             Long linktopaginate = timeline.getNextview();
@@ -119,6 +155,10 @@ public class Publicline extends HomePage {
                         }
                     }.add(new Label("tuname","")));
                     listitem.add(new Label("tbody", listitem.getModel().getObject()));
+					listitem.add(new Label(	"datetime",
+											listitem.getModel()
+													.getObject()));
+
                 }
             }).setVersioned(false);
             add(new WebMarkupContainer("pagedown") {
