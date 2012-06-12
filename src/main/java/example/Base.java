@@ -2,6 +2,7 @@ package example;
 
 import static com.google.common.collect.ImmutableList.of;
 import static example.services.db.cassandra.CassandraService.SE;
+import static me.prettyprint.hector.api.factory.HFactory.createColumn;
 import static me.prettyprint.hector.api.factory.HFactory.createStringColumn;
 
 import java.nio.charset.Charset;
@@ -337,7 +338,7 @@ public abstract class Base extends WebPage {
         for (String follower : followerUnames) {
 			mutator.addInsertion(	follower,
 									TIMELINE,
-									createStringColumn(	String.valueOf(timestamp),
+									createColumn(timestamp,
 														key));
         }
 		mutator.execute();
