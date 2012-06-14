@@ -31,6 +31,28 @@
 		 </filter-mapping>
 -->
 
+  <filter>
+    <filter-name>GzipFilter</filter-name>
+     <filter-class>@GzipFilterClass@</filter-class>
+  
+   <!-- 
+    <filter-class>org.mortbay.servlet.GzipFilter</filter-class>
+    
+    -->
+    <!-- Jetty from 7.0 -->
+    <!--
+     <filter-class>org.eclipse.jetty.servlets.GzipFilter</filter-class>
+     -->
+    <init-param>
+      <param-name>mimeTypes</param-name>
+      <param-value>text/html,text/plain,text/xml,application/xhtml+xml,text/css,application/javascript,image/svg+xml</param-value>
+    </init-param>
+  </filter>
+  <filter-mapping>
+    <filter-name>GzipFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping> 
+
 
 <!-- Guice Integration -->
 	<listener>

@@ -53,6 +53,12 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-servlets</artifactId>
+            <version>8.1.3.v20120416</version>
+            <scope>test</scope>            
+        </dependency>
+		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
 			<version>12.0</version>
@@ -70,6 +76,21 @@
 		</dependency>
 	</dependencies>
 	<build>
+	   <resources>
+            <resource>
+                <directory>${basedir}/src/main/resources</directory>
+            </resource>
+            <resource>
+                <directory>${basedir}/src/main/webapp/WEB-INF</directory>
+                <includes>
+                    <include>web.xml</include>
+                </includes>
+                <filtering>true</filtering>
+                <targetPath>${project.build.directory}</targetPath>
+            </resource>
+        </resources>
+	
+	
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -85,15 +106,26 @@
 			<plugin>
 				<groupId>org.mortbay.jetty</groupId>
 				<artifactId>jetty-maven-plugin</artifactId>			
+				<dependencies>
+				<dependency>
+		            <groupId>org.eclipse.jetty</groupId>
+		            <artifactId>jetty-servlets</artifactId>
+		            <version>8.1.3.v20120416</version>		                 
+		        </dependency>
+				</dependencies>
 				<configuration>
-				    <overrideWebXml>src/main/webapp/WEB-INF/web.xml</overrideWebXml>
+				    <overrideWebXml>${project.build.directory}/web.xml</overrideWebXml>
 					<connectors>
 						<connector implementation="org.eclipse.jetty.server.nio.SelectChannelConnector">
 							<port>9292</port>
 						</connector>
 					</connectors>
-					<reload>manual</reload>
+					<webAppConfig>
+					  <descriptor>${project.build.directory}/web.xml</descriptor>
+					</webAppConfig>
+					<reload>manual</reload>					
 				</configuration>
+				
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -103,10 +135,12 @@
 					<downloadJavadocs>true</downloadJavadocs>
 				</configuration>
 			</plugin>
- 
-    
-    
-  
+            <plugin>
+                <artifactId>maven-war-plugin</artifactId>
+                <configuration>
+                    <webXml>${project.build.directory}/web.xml</webXml>
+                </configuration>
+            </plugin>  
 		</plugins>
 		<pluginManagement>
 			<plugins>
@@ -130,4 +164,27 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
+	
+	 <profiles>
+        <profile>
+            <id>default</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <build>
+                <filters>
+                    <filter>${basedir}/src/main/filters/default.properties</filter>
+                </filters>
+            </build>
+        </profile>
+        <profile>
+            <id>test</id>
+            <build>
+                <filters>
+                    <filter>${basedir}/src/main/filters/test.properties</filter>
+                </filters>
+            </build>
+        </profile>
+    </profiles>
+	
 </project>
