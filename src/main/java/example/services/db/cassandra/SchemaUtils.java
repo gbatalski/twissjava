@@ -3,18 +3,24 @@
  */
 package example.services.db.cassandra;
 
+import static com.google.common.base.Charsets.UTF_8;
+import static com.google.common.io.Files.write;
+import static java.lang.String.format;
+
 import java.io.File;
 import java.security.Permission;
 
 import org.apache.cassandra.cli.CliMain;
 
+import com.google.common.io.Files;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 import example.guice.annotation.Host;
+import example.guice.annotation.Keyspace;
 import example.guice.annotation.Port;
+import example.guice.annotation.ReplicationFactor;
 import example.guice.annotation.SchemaFilename;
-
 /**
  * @author gena
  * 
@@ -27,17 +33,30 @@ public class SchemaUtils {
 
 	private final File schemaFile;
 
+	private final String keyspace;
+
+	private final int replicationFactor;
+
+
 	@Inject
 	public SchemaUtils(@Host String host, @Port Integer port,
-			@SchemaFilename String schemaFile) {
+			@SchemaFilename String schemaFile, @Keyspace String keyspace,
+			@ReplicationFactor int replicationFactor) {
 		this.host = host;
 		this.port = port;
+		this.keyspace = keyspace;
 		this.schemaFile = new File(this.getClass()
 										.getResource("/" + schemaFile)
 										.getFile());
+
+		this.replicationFactor = replicationFactor;
 	}
 
 	public void deploySchema() {
+		this.deploySchema(replicationFactor, false);
+	}
+
+	public void deploySchema(final int replicationFactor, final boolean drop) {
 		new Runnable() {
 			@Override
 			public void run() {
@@ -55,9 +74,26 @@ public class SchemaUtils {
 				SecurityManager savedManager = System.getSecurityManager();
 				System.setSecurityManager(securityManager);
 				try {
+					
+					File f = null;
+					if (drop) {
+						f = File.createTempFile("drop", null);
+						write(format("drop keyspace %s;", keyspace), f, UTF_8);
 
+						CliMain.main(new String[] { "-h", host, "-p",
+								port.toString(), "-f", f.getAbsolutePath() });
+						f.delete();
+					}
+					f = File.createTempFile("schema", null);
+
+					String content = Files.toString(schemaFile, UTF_8);
+					content.replaceAll("(replication_factor\\s*:)\\s*\\d", "$1"
+							+ replicationFactor);
+					write(content, f, UTF_8);
+					
 					CliMain.main(new String[] { "-h", host, "-p",
-							port.toString(), "-f", schemaFile.getAbsolutePath() });
+							port.toString(), "-f", f.getAbsolutePath() });
+					f.delete();
 				} catch (SecurityException e) {
 					// Nothing
 				} catch (Exception e) {

@@ -7,6 +7,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 
+import me.prettyprint.hector.api.HConsistencyLevel;
+
 import org.yaml.snakeyaml.Yaml;
 
 import com.google.common.base.Charsets;
@@ -15,9 +17,11 @@ import com.google.inject.Binder;
 import com.google.inject.Module;
 
 import example.guice.annotation.Cluster;
+import example.guice.annotation.ConsistencyLevel;
 import example.guice.annotation.Host;
 import example.guice.annotation.Keyspace;
 import example.guice.annotation.Port;
+import example.guice.annotation.ReplicationFactor;
 import example.guice.annotation.SchemaFilename;
 import example.services.db.cassandra.CassandraService;
 import example.services.db.cassandra.SchemaUtils;
@@ -63,6 +67,13 @@ public class CassandraModule extends Object implements Module {
 				.annotatedWith(Keyspace.class)
 				.toInstance(cluster.getKeyspace());
 
+		binder.bind(Integer.class)
+				.annotatedWith(ReplicationFactor.class)
+				.toInstance(cluster.getReplicationFactor());
+		binder.bind(HConsistencyLevel.class)
+				.annotatedWith(ConsistencyLevel.class)
+				.toInstance(cluster.getConsistencyLevel());
+
 	}
 
 	public static class CassandraStorage {
@@ -73,6 +84,10 @@ public class CassandraModule extends Object implements Module {
 		private String[] hosts = new String[] { "localhost" };
 
 		private int port = 9160;
+
+		private int replicationFactor = 1;
+
+		private HConsistencyLevel consistencyLevel = HConsistencyLevel.QUORUM;
 
 		public String getCluster() {
 			return cluster;
@@ -120,10 +135,15 @@ public class CassandraModule extends Object implements Module {
 			int result = 1;
 			result = prime * result
 					+ ((cluster == null) ? 0 : cluster.hashCode());
+			result = prime
+					* result
+					+ ((consistencyLevel == null) ? 0
+							: consistencyLevel.hashCode());
 			result = prime * result + Arrays.hashCode(hosts);
 			result = prime * result
 					+ ((keyspace == null) ? 0 : keyspace.hashCode());
 			result = prime * result + port;
+			result = prime * result + replicationFactor;
 			return result;
 		}
 
@@ -141,6 +161,8 @@ public class CassandraModule extends Object implements Module {
 					return false;
 			} else if (!cluster.equals(other.cluster))
 				return false;
+			if (consistencyLevel != other.consistencyLevel)
+				return false;
 			if (!Arrays.equals(hosts, other.hosts))
 				return false;
 			if (keyspace == null) {
@@ -150,7 +172,26 @@ public class CassandraModule extends Object implements Module {
 				return false;
 			if (port != other.port)
 				return false;
+			if (replicationFactor != other.replicationFactor)
+				return false;
 			return true;
 		}
+
+		public int getReplicationFactor() {
+			return replicationFactor;
+		}
+
+		public void setReplicationFactor(int replicationFactor) {
+			this.replicationFactor = replicationFactor;
+		}
+
+		public HConsistencyLevel getConsistencyLevel() {
+			return consistencyLevel;
+		}
+
+		public void setConsistencyLevel(HConsistencyLevel consistencyLevel) {
+			this.consistencyLevel = consistencyLevel;
+		}
+
 	}
 }

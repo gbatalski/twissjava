@@ -1,0 +1,25 @@
+<html xmlns:wicket="http://www.w3.org/1999/xhtml">
+<head></head>
+<body>
+  <wicket:extend>
+    <h2 class="grid_4 suffix_5">Update schema</h2>
+    <div class="grid_9 alpha">
+        <form method="GET" class="grid_6" wicket:id='updateForm'>           
+            <p>
+                <label>Drop</label> <input wicket:id="drop" type="checkbox"/>
+            </p>
+            <p>
+                <label>Replication factor</label>
+                <input wicket:id="replicationFactor" type="text" />
+            </p>
+            <p>
+             <label>Consistency level</label>
+            <select wicket:id="consistencyLevel" size="1"/>
+            </p>
+            <input type="submit" value="Update" />
+        </form>
+        
+    </div>
+  </wicket:extend>
+</body>
+</html>

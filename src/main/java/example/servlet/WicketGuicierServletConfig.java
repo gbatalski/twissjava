@@ -18,7 +18,7 @@ public class WicketGuicierServletConfig extends GuicierServletConfig {
 	@Override
 	protected Stage getConfigurationType() {
 
-		return Stage.DEVELOPMENT;
+		return Stage.PRODUCTION;
 	}
 
 }

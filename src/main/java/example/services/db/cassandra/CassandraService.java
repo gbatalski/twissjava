@@ -8,10 +8,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import me.prettyprint.cassandra.model.BasicKeyspaceDefinition;
+import me.prettyprint.cassandra.model.ConfigurableConsistencyLevel;
 import me.prettyprint.cassandra.serializers.StringSerializer;
 import me.prettyprint.cassandra.service.CassandraHostConfigurator;
 import me.prettyprint.cassandra.service.ThriftCfDef;
 import me.prettyprint.hector.api.Cluster;
+import me.prettyprint.hector.api.ConsistencyLevelPolicy;
+import me.prettyprint.hector.api.HConsistencyLevel;
 import me.prettyprint.hector.api.Keyspace;
 import me.prettyprint.hector.api.beans.ColumnSlice;
 import me.prettyprint.hector.api.beans.HColumn;
@@ -40,6 +44,7 @@ import org.apache.log4j.Logger;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
+import example.guice.annotation.ConsistencyLevel;
 import example.guice.annotation.Host;
 import example.guice.annotation.Port;
 
@@ -66,10 +71,19 @@ public class CassandraService {
 
 	private Keyspace _keyspace = null;
 
+	private final String keyspaceName;
+
+	private final ConfigurableConsistencyLevel consistencyLevelPolicy = new ConfigurableConsistencyLevel();
+
+	private final SchemaUtils schemaUtils;
+
+
 	@Inject
 	public CassandraService(@Host final String host, @Port final Integer port,
 			@example.guice.annotation.Cluster final String clusterName,
-			@example.guice.annotation.Keyspace final String keyspace) {
+			@example.guice.annotation.Keyspace final String keyspace,
+			SchemaUtils schemaUtils,
+			@ConsistencyLevel final HConsistencyLevel consistencyLevel) {
 
 		CassandraHostConfigurator cassandraHostConfigurator = new CassandraHostConfigurator(host.trim()
 				+ ":" + port);
@@ -81,7 +95,10 @@ public class CassandraService {
 		_cluster = HFactory.getOrCreateCluster(	clusterName,
 												cassandraHostConfigurator);
 		createKeyspaceIfAbsent(keyspace);
-		_keyspace = HFactory.createKeyspace(keyspace, _cluster);
+		this.keyspaceName = keyspace;
+		this.schemaUtils = schemaUtils;
+		this.consistencyLevelPolicy.setDefaultWriteConsistencyLevel(consistencyLevel);
+		this.consistencyLevelPolicy.setDefaultReadConsistencyLevel(consistencyLevel);
 	}
 
 	/**
@@ -110,7 +127,7 @@ public class CassandraService {
 	public void createColumnFamilyIfAbsent(final String columnFamily) {
 
 		try {
-			ColumnFamilyDefinition def = HFactory.createColumnFamilyDefinition(	_keyspace.getKeyspaceName(),
+			ColumnFamilyDefinition def = HFactory.createColumnFamilyDefinition(	getKeyspace().getKeyspaceName(),
 																				columnFamily);
 			_cluster.addColumnFamily(def);
 		} catch (Exception ex) {
@@ -125,7 +142,7 @@ public class CassandraService {
 	 */
 	public void createSuperColumnFamilyIfAbsent(final String columnFamily) {
 		try {
-			ThriftCfDef def = (ThriftCfDef) HFactory.createColumnFamilyDefinition(	_keyspace.getKeyspaceName(),
+			ThriftCfDef def = (ThriftCfDef) HFactory.createColumnFamilyDefinition(	getKeyspace().getKeyspaceName(),
 																					columnFamily);
 			def.setColumnType(ColumnType.SUPER);
 
@@ -145,7 +162,7 @@ public class CassandraService {
 	 */
 	public String readColumn(final String key, final String columnName,
 			final String columnFamily) {
-		ColumnQuery<String, String, String> columnQuery = HFactory.createStringColumnQuery(_keyspace);
+		ColumnQuery<String, String, String> columnQuery = HFactory.createStringColumnQuery(getKeyspace());
 		columnQuery.setColumnFamily(columnFamily)
 					.setKey(key)
 					.setName(columnName);
@@ -169,7 +186,7 @@ public class CassandraService {
 	public String readSubColumn(final String key, final String columnName,
 			final String superColumn, final String columnFamily) {
 
-		SubColumnQuery<String, String, String, String> subColumnQuery = HFactory.createSubColumnQuery(	_keyspace,
+		SubColumnQuery<String, String, String, String> subColumnQuery = HFactory.createSubColumnQuery(	getKeyspace(),
 																										SE,
 																										SE,
 																										SE,
@@ -199,7 +216,7 @@ public class CassandraService {
 			final String[] columns, final String columnFamily) {
 		HashMap<String, String> results = new HashMap<String, String>();
 
-		SliceQuery<String, String, String> sliceQuery = HFactory.createSliceQuery(	_keyspace,
+		SliceQuery<String, String, String> sliceQuery = HFactory.createSliceQuery(	getKeyspace(),
 																					SE,
 																					SE,
 																					SE);
@@ -247,7 +264,7 @@ public class CassandraService {
 			final String columnFamily, final String startColumn, final int count) {
 		HashMap<String, String> results = new HashMap<String, String>();
 
-		RangeSlicesQuery<String, String, String> sliceQuery = HFactory.createRangeSlicesQuery(	_keyspace,
+		RangeSlicesQuery<String, String, String> sliceQuery = HFactory.createRangeSlicesQuery(	getKeyspace(),
 																								SE,
 																								SE,
 																								SE);
@@ -292,7 +309,7 @@ public class CassandraService {
 			final String columnFamily) {
 		HashMap<String, String> results = new HashMap<String, String>();
 
-		SubSliceQuery<String, String, String, String> subSliceQuery = HFactory.createSubSliceQuery(	_keyspace,
+		SubSliceQuery<String, String, String, String> subSliceQuery = HFactory.createSubSliceQuery(	getKeyspace(),
 																									SE,
 																									SE,
 																									SE,
@@ -329,7 +346,7 @@ public class CassandraService {
 			final String superColumn, final String columnFamily) {
 		HashMap<String, String> results = new HashMap<String, String>();
 
-		SuperColumnQuery<String, String, String, String> superColumnQuery = HFactory.createSuperColumnQuery(_keyspace,
+		SuperColumnQuery<String, String, String, String> superColumnQuery = HFactory.createSuperColumnQuery(getKeyspace(),
 																											SE,
 																											SE,
 																											SE,
@@ -361,7 +378,7 @@ public class CassandraService {
 	 */
 	public void updateColumn(final String key, final String value,
 			final String columnName, final String columnFamily) {
-		Mutator<String> mutator = HFactory.createMutator(_keyspace, SE);
+		Mutator<String> mutator = HFactory.createMutator(getKeyspace(), SE);
 
 		// insert (row, columnfamily, column(key, value));
 		mutator.insert(	key,
@@ -381,7 +398,7 @@ public class CassandraService {
 	public void updateSubColumn(final String key, final String value,
 			final String columnName, final String superColumn,
 			final String columnFamily) {
-		Mutator<String> mutator = HFactory.createMutator(_keyspace, SE);
+		Mutator<String> mutator = HFactory.createMutator(getKeyspace(), SE);
 
 		// insert (row, column family, column(key, value));
 		mutator.insert(	key,
@@ -406,7 +423,7 @@ public class CassandraService {
 	public void updateSubColumns(final String key,
 			final Map<String, String> columns, final String superColumn,
 			final String columnFamily) {
-		Mutator<String> mutator = HFactory.createMutator(_keyspace, SE);
+		Mutator<String> mutator = HFactory.createMutator(getKeyspace(), SE);
 
 		List<HColumn<String, String>> columnList = new ArrayList<HColumn<String, String>>();
 		for (String columnName : columns.keySet()) {
@@ -432,7 +449,7 @@ public class CassandraService {
 	 */
 	public void deleteColumn(final String key, final String columnName,
 			final String columnFamily) {
-		Mutator<String> mutator = HFactory.createMutator(_keyspace, SE);
+		Mutator<String> mutator = HFactory.createMutator(getKeyspace(), SE);
 
 		mutator.delete(key, columnFamily, columnName, SE);
 	}
@@ -447,7 +464,7 @@ public class CassandraService {
 	 */
 	public void deleteSubColumn(final String key, final String columnName,
 			final String superColumn, final String columnFamily) {
-		Mutator<String> mutator = HFactory.createMutator(_keyspace, SE);
+		Mutator<String> mutator = HFactory.createMutator(getKeyspace(), SE);
 
 		mutator.subDelete(key, columnFamily, superColumn, columnName, SE, SE);
 	}
@@ -459,7 +476,7 @@ public class CassandraService {
 	 * @return
 	 */
 	public List<String> listKeys(final String columnFamily) {
-		RangeSlicesQuery<String, String, String> rangeSlicesQuery = HFactory.createRangeSlicesQuery(_keyspace,
+		RangeSlicesQuery<String, String, String> rangeSlicesQuery = HFactory.createRangeSlicesQuery(getKeyspace(),
 																									SE,
 																									SE,
 																									SE);
@@ -507,7 +524,7 @@ public class CassandraService {
 	 */
 	public List<String> listKeys(final String columnFamily,
 			final String startKey) {
-		RangeSlicesQuery<String, String, String> rangeSlicesQuery = HFactory.createRangeSlicesQuery(_keyspace,
+		RangeSlicesQuery<String, String, String> rangeSlicesQuery = HFactory.createRangeSlicesQuery(getKeyspace(),
 																									SE,
 																									SE,
 																									SE);
@@ -563,7 +580,7 @@ public class CassandraService {
 			final boolean reversed) {
 		Map<String, String> result = new TreeMap<String, String>();
 
-		RangeSubSlicesQuery<String, String, String, String> rangeSubSlicesQuery = HFactory.createRangeSubSlicesQuery(	_keyspace,
+		RangeSubSlicesQuery<String, String, String, String> rangeSubSlicesQuery = HFactory.createRangeSubSlicesQuery(	getKeyspace(),
 																														SE,
 																														SE,
 																														SE,
@@ -634,7 +651,7 @@ public class CassandraService {
 
 		Map<String, String> result = new TreeMap<String, String>();
 
-		RangeSubSlicesQuery<String, String, String, String> rangeSubSlicesQuery = HFactory.createRangeSubSlicesQuery(	_keyspace,
+		RangeSubSlicesQuery<String, String, String, String> rangeSubSlicesQuery = HFactory.createRangeSubSlicesQuery(	getKeyspace(),
 																														SE,
 																														SE,
 																														SE,
@@ -686,7 +703,7 @@ public class CassandraService {
 	public int countSubColumns(final String key, final String superColumn,
 			final String columnFamily) {
 
-		SubCountQuery<String, String, String> subCountQuery = HFactory.createSubCountQuery(	_keyspace,
+		SubCountQuery<String, String, String> subCountQuery = HFactory.createSubCountQuery(	getKeyspace(),
 																							SE,
 																							SE,
 																							SE);
@@ -703,7 +720,7 @@ public class CassandraService {
 	public long countColumns(final String key, final String columnName,
 			final String columnFamily) {
 
-		CounterQuery<String, String> countQuery = HFactory.createCounterColumnQuery(_keyspace,
+		CounterQuery<String, String> countQuery = HFactory.createCounterColumnQuery(getKeyspace(),
 																					SE,
 																					SE);
 		countQuery.setColumnFamily(columnFamily)
@@ -716,6 +733,47 @@ public class CassandraService {
 	}
 
 	public Mutator<String> getMutator() {
-		return HFactory.createMutator(_keyspace, SE);
+		return HFactory.createMutator(getKeyspace(), SE);
 	}
+
+	public Keyspace getKeyspace() {
+		if (_keyspace == null)
+			_keyspace = HFactory.createKeyspace(keyspaceName,
+												_cluster,
+												consistencyLevelPolicy);
+		return _keyspace;
+	}
+
+	public ConsistencyLevelPolicy getConsistencyLevelPolicy() {
+		return consistencyLevelPolicy;
+	}
+
+	public void updateSchema(boolean drop, int replicationFactor,
+			HConsistencyLevel consistencyLevel) {
+		if (drop) {
+			_cluster.dropKeyspace(keyspaceName, true);
+			schemaUtils.deploySchema(replicationFactor, false);
+		}
+		else {
+			KeyspaceDefinition kesd = _cluster.describeKeyspace(keyspaceName);
+			BasicKeyspaceDefinition updatedKesd = new BasicKeyspaceDefinition();
+			updatedKesd.setReplicationFactor(replicationFactor);
+			updatedKesd.setDurableWrites(kesd.isDurableWrites());
+			updatedKesd.setName(kesd.getName());
+			updatedKesd.setStrategyClass(kesd.getStrategyClass());
+			updatedKesd.getStrategyOptions()
+						.putAll(kesd.getStrategyOptions());
+
+			_cluster.updateKeyspace(updatedKesd, true);
+		}
+		this.consistencyLevelPolicy.setDefaultReadConsistencyLevel(consistencyLevel);
+		this.consistencyLevelPolicy.setDefaultWriteConsistencyLevel(consistencyLevel);
+
+	}
+
+	public int getReplicationFactor() {
+		return _cluster.describeKeyspace(keyspaceName)
+						.getReplicationFactor();
+	}
+
 }

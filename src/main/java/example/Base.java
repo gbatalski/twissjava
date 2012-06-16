@@ -279,6 +279,8 @@ public abstract class Base extends WebPage {
 		return new Tweet(	tweetid.getBytes(),
 							map.get("uname"),
 							map.get("body"),
+							map.get("timestamp") == null ? null
+									:
 							Long.parseLong(map.get("timestamp")));
 	}
 
