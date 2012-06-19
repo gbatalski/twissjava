@@ -96,7 +96,7 @@ public class CassandraService {
 
 		_cluster = HFactory.getOrCreateCluster(	clusterName,
 												cassandraHostConfigurator);
-		createKeyspaceIfAbsent(keyspace);
+		// createKeyspaceIfAbsent(keyspace);
 		this.keyspaceName = keyspace;
 		this.schemaUtils = schemaUtils;
 		this.consistencyLevelPolicy.setDefaultWriteConsistencyLevel(writeConsistencyLevel);
@@ -107,6 +107,7 @@ public class CassandraService {
 	 * 
 	 * @param keyspace
 	 */
+	@SuppressWarnings("unused")
 	private void createKeyspaceIfAbsent(final String keyspace) {
 		try {
 			KeyspaceDefinition kdef = HFactory.createKeyspaceDefinition(keyspace,
