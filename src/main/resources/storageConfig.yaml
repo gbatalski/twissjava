@@ -4,4 +4,5 @@ hosts: [localhost]
 keyspace: Twissjava
 port: 9160
 replicationFactor: 1
-consistencyLevel: QUORUM
+readConsistencyLevel: QUORUM
+writeConsistencyLevel: QUORUM

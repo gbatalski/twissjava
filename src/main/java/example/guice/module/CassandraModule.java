@@ -17,12 +17,13 @@ import com.google.inject.Binder;
 import com.google.inject.Module;
 
 import example.guice.annotation.Cluster;
-import example.guice.annotation.ConsistencyLevel;
 import example.guice.annotation.Host;
 import example.guice.annotation.Keyspace;
 import example.guice.annotation.Port;
+import example.guice.annotation.ReadConsistencyLevel;
 import example.guice.annotation.ReplicationFactor;
 import example.guice.annotation.SchemaFilename;
+import example.guice.annotation.WriteConsistencyLevel;
 import example.services.db.cassandra.CassandraService;
 import example.services.db.cassandra.SchemaUtils;
 
@@ -71,8 +72,12 @@ public class CassandraModule extends Object implements Module {
 				.annotatedWith(ReplicationFactor.class)
 				.toInstance(cluster.getReplicationFactor());
 		binder.bind(HConsistencyLevel.class)
-				.annotatedWith(ConsistencyLevel.class)
-				.toInstance(cluster.getConsistencyLevel());
+				.annotatedWith(WriteConsistencyLevel.class)
+				.toInstance(cluster.getWriteConsistencyLevel());
+
+		binder.bind(HConsistencyLevel.class)
+				.annotatedWith(ReadConsistencyLevel.class)
+				.toInstance(cluster.getReadConsistencyLevel());
 
 	}
 
@@ -87,7 +92,9 @@ public class CassandraModule extends Object implements Module {
 
 		private int replicationFactor = 1;
 
-		private HConsistencyLevel consistencyLevel = HConsistencyLevel.QUORUM;
+		private HConsistencyLevel readConsistencyLevel = HConsistencyLevel.QUORUM;
+
+		private HConsistencyLevel writeConsistencyLevel = HConsistencyLevel.QUORUM;
 
 		public String getCluster() {
 			return cluster;
@@ -135,15 +142,19 @@ public class CassandraModule extends Object implements Module {
 			int result = 1;
 			result = prime * result
 					+ ((cluster == null) ? 0 : cluster.hashCode());
-			result = prime
-					* result
-					+ ((consistencyLevel == null) ? 0
-							: consistencyLevel.hashCode());
 			result = prime * result + Arrays.hashCode(hosts);
 			result = prime * result
 					+ ((keyspace == null) ? 0 : keyspace.hashCode());
 			result = prime * result + port;
+			result = prime
+					* result
+					+ ((readConsistencyLevel == null) ? 0
+							: readConsistencyLevel.hashCode());
 			result = prime * result + replicationFactor;
+			result = prime
+					* result
+					+ ((writeConsistencyLevel == null) ? 0
+							: writeConsistencyLevel.hashCode());
 			return result;
 		}
 
@@ -161,8 +172,6 @@ public class CassandraModule extends Object implements Module {
 					return false;
 			} else if (!cluster.equals(other.cluster))
 				return false;
-			if (consistencyLevel != other.consistencyLevel)
-				return false;
 			if (!Arrays.equals(hosts, other.hosts))
 				return false;
 			if (keyspace == null) {
@@ -172,7 +181,11 @@ public class CassandraModule extends Object implements Module {
 				return false;
 			if (port != other.port)
 				return false;
+			if (readConsistencyLevel != other.readConsistencyLevel)
+				return false;
 			if (replicationFactor != other.replicationFactor)
+				return false;
+			if (writeConsistencyLevel != other.writeConsistencyLevel)
 				return false;
 			return true;
 		}
@@ -185,12 +198,21 @@ public class CassandraModule extends Object implements Module {
 			this.replicationFactor = replicationFactor;
 		}
 
-		public HConsistencyLevel getConsistencyLevel() {
-			return consistencyLevel;
+		public HConsistencyLevel getReadConsistencyLevel() {
+			return readConsistencyLevel;
 		}
 
-		public void setConsistencyLevel(HConsistencyLevel consistencyLevel) {
-			this.consistencyLevel = consistencyLevel;
+		public void setReadConsistencyLevel(HConsistencyLevel consistencyLevel) {
+			this.readConsistencyLevel = consistencyLevel;
+		}
+
+		public HConsistencyLevel getWriteConsistencyLevel() {
+			return writeConsistencyLevel;
+		}
+
+		public void setWriteConsistencyLevel(
+				HConsistencyLevel writeConsistencyLevel) {
+			this.writeConsistencyLevel = writeConsistencyLevel;
 		}
 
 	}

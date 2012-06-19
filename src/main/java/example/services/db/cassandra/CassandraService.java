@@ -44,9 +44,10 @@ import org.apache.log4j.Logger;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
-import example.guice.annotation.ConsistencyLevel;
 import example.guice.annotation.Host;
 import example.guice.annotation.Port;
+import example.guice.annotation.ReadConsistencyLevel;
+import example.guice.annotation.WriteConsistencyLevel;
 
 /**
  * Nebula Cloud Platform Copyright 2010 Innovation Works Limited, All Rights
@@ -83,7 +84,8 @@ public class CassandraService {
 			@example.guice.annotation.Cluster final String clusterName,
 			@example.guice.annotation.Keyspace final String keyspace,
 			SchemaUtils schemaUtils,
-			@ConsistencyLevel final HConsistencyLevel consistencyLevel) {
+			@ReadConsistencyLevel final HConsistencyLevel readConsistencyLevel,
+			@WriteConsistencyLevel final HConsistencyLevel writeConsistencyLevel) {
 
 		CassandraHostConfigurator cassandraHostConfigurator = new CassandraHostConfigurator(host.trim()
 				+ ":" + port);
@@ -97,8 +99,8 @@ public class CassandraService {
 		createKeyspaceIfAbsent(keyspace);
 		this.keyspaceName = keyspace;
 		this.schemaUtils = schemaUtils;
-		this.consistencyLevelPolicy.setDefaultWriteConsistencyLevel(consistencyLevel);
-		this.consistencyLevelPolicy.setDefaultReadConsistencyLevel(consistencyLevel);
+		this.consistencyLevelPolicy.setDefaultWriteConsistencyLevel(writeConsistencyLevel);
+		this.consistencyLevelPolicy.setDefaultReadConsistencyLevel(readConsistencyLevel);
 	}
 
 	/**
@@ -749,7 +751,8 @@ public class CassandraService {
 	}
 
 	public void updateSchema(boolean drop, int replicationFactor,
-			HConsistencyLevel consistencyLevel) {
+			HConsistencyLevel readConsistencyLevel,
+			HConsistencyLevel writeConsistencyLevel) {
 		if (drop) {
 			_cluster.dropKeyspace(keyspaceName, true);
 			schemaUtils.deploySchema(replicationFactor, false);
@@ -766,8 +769,8 @@ public class CassandraService {
 
 			_cluster.updateKeyspace(updatedKesd, true);
 		}
-		this.consistencyLevelPolicy.setDefaultReadConsistencyLevel(consistencyLevel);
-		this.consistencyLevelPolicy.setDefaultWriteConsistencyLevel(consistencyLevel);
+		this.consistencyLevelPolicy.setDefaultReadConsistencyLevel(readConsistencyLevel);
+		this.consistencyLevelPolicy.setDefaultWriteConsistencyLevel(writeConsistencyLevel);
 
 	}
 

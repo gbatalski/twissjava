@@ -4,6 +4,7 @@
 package example;
 
 
+import static com.google.common.collect.ImmutableList.copyOf;
 import me.prettyprint.cassandra.service.OperationType;
 import me.prettyprint.hector.api.HConsistencyLevel;
 
@@ -13,8 +14,6 @@ import org.apache.wicket.markup.html.form.ListChoice;
 import org.apache.wicket.markup.html.form.TextField;
 import org.apache.wicket.model.PropertyModel;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
-
-import com.google.common.collect.ImmutableList;
 
 
 /**
@@ -32,8 +31,11 @@ public class SchemaUpdate extends Base {
 
 	private int replicationFactor = cassandra.getReplicationFactor();
 
-	private HConsistencyLevel consistencyLevel = cassandra.getConsistencyLevelPolicy()
-															.get(OperationType.WRITE);
+	private HConsistencyLevel readConsistencyLevel = cassandra.getConsistencyLevelPolicy()
+																	.get(OperationType.READ);
+
+	private HConsistencyLevel writeConsistencyLevel = cassandra.getConsistencyLevelPolicy()
+																.get(OperationType.WRITE);
 
 	public SchemaUpdate(PageParameters parameters) {
 		super(parameters);
@@ -45,10 +47,14 @@ public class SchemaUpdate extends Base {
 			.add(new TextField<Integer>("replicationFactor",
 										PropertyModel.<Integer> of(	this,
 																	"replicationFactor")))
-			.add(new ListChoice<HConsistencyLevel>(	"consistencyLevel",
+			.add(new ListChoice<HConsistencyLevel>(	"readConsistencyLevel",
 													PropertyModel.<HConsistencyLevel> of(	this,
-																						"consistencyLevel"),
-													ImmutableList.<HConsistencyLevel> copyOf(HConsistencyLevel.values())));
+																							"readConsistencyLevel"),
+													copyOf(HConsistencyLevel.values())))
+			.add(new ListChoice<HConsistencyLevel>(	"writeConsistencyLevel",
+													PropertyModel.<HConsistencyLevel> of(	this,
+																							"writeConsistencyLevel"),
+													copyOf(HConsistencyLevel.values())));
 
 	}
 
@@ -64,7 +70,10 @@ public class SchemaUpdate extends Base {
 
 		@Override
 		public void onSubmit() {
-			cassandra.updateSchema(drop, replicationFactor, consistencyLevel);
+			cassandra.updateSchema(	drop,
+									replicationFactor,
+									readConsistencyLevel,
+									writeConsistencyLevel);
 		}
 	}
 
@@ -84,11 +93,19 @@ public class SchemaUpdate extends Base {
 		this.replicationFactor = replication;
 	}
 
-	public HConsistencyLevel getConsistencyLevel() {
-		return consistencyLevel;
+	public HConsistencyLevel getWriteConsistencyLevel() {
+		return writeConsistencyLevel;
 	}
 
-	public void setConsistencyLevel(HConsistencyLevel consistency) {
-		this.consistencyLevel = consistency;
+	public void setWriteConsistencyLevel(HConsistencyLevel consistency) {
+		this.writeConsistencyLevel = consistency;
+	}
+
+	public HConsistencyLevel getReadConsistencyLevel() {
+		return readConsistencyLevel;
+	}
+
+	public void setReadConsistencyLevel(HConsistencyLevel readConsistencyLevel) {
+		this.readConsistencyLevel = readConsistencyLevel;
 	}
 }
