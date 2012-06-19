@@ -9,6 +9,7 @@ import java.util.Arrays;
 
 import me.prettyprint.hector.api.HConsistencyLevel;
 
+import org.apache.log4j.Logger;
 import org.yaml.snakeyaml.Yaml;
 
 import com.google.common.base.Charsets;
@@ -27,12 +28,14 @@ import example.guice.annotation.WriteConsistencyLevel;
 import example.services.db.cassandra.CassandraService;
 import example.services.db.cassandra.SchemaUtils;
 
+;
 /**
  * @author gena
- *
+ * 
  */
 public class CassandraModule extends Object implements Module {
 
+	private static final Logger LOG = Logger.getLogger(CassandraService.class);
 	/* (non-Javadoc)
 	 * @see com.google.inject.Module#configure(com.google.inject.Binder)
 	 */
@@ -44,10 +47,13 @@ public class CassandraModule extends Object implements Module {
 																					.getResource("./storageConfig.yaml")
 																					.getFile()),
 																Charsets.UTF_8));
+
 		} catch (IOException e) {
 			// ignore
-			e.printStackTrace();
+			LOG.error(e);
 		}
+		LOG.info("Using cassandra cluster: " + cluster.toString());
+
 		binder.bind(CassandraService.class);
 		binder.bind(SchemaUtils.class);
 		binder.bind(String.class)
@@ -213,6 +219,16 @@ public class CassandraModule extends Object implements Module {
 		public void setWriteConsistencyLevel(
 				HConsistencyLevel writeConsistencyLevel) {
 			this.writeConsistencyLevel = writeConsistencyLevel;
+		}
+
+		@Override
+		public String toString() {
+			return "CassandraStorage [cluster=" + cluster + ", keyspace="
+					+ keyspace + ", hosts=" + Arrays.toString(hosts)
+					+ ", port=" + port + ", replicationFactor="
+					+ replicationFactor + ", readConsistencyLevel="
+					+ readConsistencyLevel + ", writeConsistencyLevel="
+					+ writeConsistencyLevel + "]";
 		}
 
 	}
