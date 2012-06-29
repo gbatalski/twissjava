@@ -36,12 +36,17 @@ public class AddFriends extends Base {
         super(parameters);
         username = ((TwissSession) WebSession.get()).getUname();
         
-        query = parameters.get("query").toString();
+		query = parameters.get("query")
+							.toOptional(String.class);
         if (query == null) {
             query = "";
         }
-        found = parameters.get("found").toBoolean();
-        act = parameters.get("act").toBoolean();
+		found = parameters.get("found")
+							.toOptional(Boolean.class);
+
+		act = parameters.get("act")
+						.toOptional(Boolean.class);
+
 
         add(new FriendForm("friendfinder"));
 
