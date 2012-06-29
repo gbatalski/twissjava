@@ -1,13 +1,13 @@
 package example;
 
 import static com.google.common.collect.ImmutableList.of;
+import static com.google.common.collect.Iterables.getLast;
 import static example.services.db.cassandra.CassandraService.SE;
 import static me.prettyprint.hector.api.factory.HFactory.createColumn;
 import static me.prettyprint.hector.api.factory.HFactory.createStringColumn;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Function;
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 
 import example.models.Timeline;
@@ -66,6 +67,8 @@ public abstract class Base extends WebPage {
 
 	@Inject
 	public transient CassandraService cassandra;
+
+	final static int PAGE_SIZE = 40;
 
 	// UI settings
 	public Base(final PageParameters parameters) {
@@ -112,30 +115,29 @@ public abstract class Base extends WebPage {
 		Map<String, String> map = cassandra.listColumns(uname,
 														COL_FAM,
 														null,
-														count);
-		return Arrays.asList(map.keySet()
-								.toArray(new String[] {}));
+														count,
+														false);
+		return ImmutableList.<String> copyOf(map.keySet());
 	}
 
 	private Timeline getLine(String COL_FAM, String uname, String startkey,
-			int count) {
+			int count, final boolean reversed) {
 
 		Map<String, String> map = cassandra.listColumns(uname,
 														COL_FAM,
 														startkey,
-														count);
+														count,
+														reversed);
 
 		if (null == map || 0 == map.size()) {
 			return null;
 		}
 
-		List<String> tweetids = Arrays.asList(map.values()
-													.toArray(new String[] {}));
+		List<String> tweetids = ImmutableList.<String> copyOf(map.values());
 		List<Tweet> tweets = getTweetsForTweetids(tweetids);
 
 		return new Timeline(tweets,
-							Long.valueOf(String.valueOf(map.keySet()
-															.toArray()[0])));
+							Long.valueOf(String.valueOf(getLast(map.keySet(), 0))));
 
 		/*
 		 * Selector selector = makeSel(); List<Column> timeline; byte[]
@@ -247,41 +249,40 @@ public abstract class Base extends WebPage {
 	}
 
 	public Timeline getTimeline(String uname) {
-		return getTimeline(uname, "", 40);
+		return getTimeline(uname, "", PAGE_SIZE);
 	}
 
 	public Timeline getTimeline(String uname, Long startkey) {
 		String longAsStr = (startkey == null) ? "" : String.valueOf(startkey);
-		return getTimeline(uname, longAsStr, 40);
+		return getTimeline(uname, longAsStr, PAGE_SIZE);
 	}
 
 	public Timeline getTimeline(String uname, String startkey, int limit) {
-		return getLine(TIMELINE, uname, startkey, limit);
+		return getLine(TIMELINE, uname, startkey, limit, false);
 	}
 
 	public Timeline getUserline(String uname) {
-		return getUserline(uname, "", 40);
+		return getUserline(uname, "", PAGE_SIZE);
 	}
 
 	public Timeline getUserline(String uname, Long startkey) {
 		String longAsStr = (startkey == null) ? "" : String.valueOf(startkey);
-		return getUserline(uname, longAsStr, 40);
+		return getUserline(uname, longAsStr, PAGE_SIZE);
 	}
 
 	public Timeline getUserline(String uname, String startkey, int limit) {
-		return getLine(USERLINE, uname, startkey, limit);
+		return getLine(USERLINE, uname, startkey, limit, false);
 	}
 
 	public Tweet getTweet(String tweetid) {
 
-		Map<String, String> map = cassandra.listColumns(tweetid, TWEETS);
+		Map<String, String> map = cassandra.listColumns(tweetid, TWEETS, false);
 
 		return new Tweet(	tweetid.getBytes(),
 							map.get("uname"),
 							map.get("body"),
 							map.get("timestamp") == null ? null
-									:
-							Long.parseLong(map.get("timestamp")));
+									: Long.parseLong(map.get("timestamp")));
 	}
 
 	public List<Tweet> getTweetsForTweetids(List<String> tweetids) {

@@ -3,7 +3,6 @@ package example.services.db.cassandra;
 import static com.google.common.collect.ImmutableList.of;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -215,9 +214,9 @@ public class CassandraService {
 	 * @param columnFamily
 	 * @return
 	 */
-	public HashMap<String, String> readColumns(final String key,
+	public Map<String, String> readColumns(final String key,
 			final String[] columns, final String columnFamily) {
-		HashMap<String, String> results = new HashMap<String, String>();
+		Map<String, String> results = new TreeMap<String, String>();
 
 		SliceQuery<String, String, String> sliceQuery = HFactory.createSliceQuery(	getKeyspace(),
 																					SE,
@@ -251,28 +250,34 @@ public class CassandraService {
 	 * @param columnFamily
 	 * @return
 	 */
-	public HashMap<String, String> listColumns(final String key,
-			final String columnFamily) {
+	public Map<String, String> listColumns(final String key,
+			final String columnFamily, final boolean reversed) {
 
-		return listColumns(key, columnFamily, null, MAX_COLUMN_COUNT);
+		return listColumns(key, columnFamily, null, MAX_COLUMN_COUNT, reversed);
 	}
 
-	public HashMap<String, String> listColumns(final String key,
-			final String columnFamily, final String startColumn) {
+	public Map<String, String> listColumns(final String key,
+			final String columnFamily, final String startColumn,
+			final boolean reversed) {
 
-		return listColumns(key, columnFamily, startColumn, MAX_COLUMN_COUNT);
+		return listColumns(	key,
+							columnFamily,
+							startColumn,
+							MAX_COLUMN_COUNT,
+							reversed);
 	}
 
-	public HashMap<String, String> listColumns(final String key,
-			final String columnFamily, final String startColumn, final int count) {
-		HashMap<String, String> results = new HashMap<String, String>();
+	public Map<String, String> listColumns(final String key,
+			final String columnFamily, final String startColumn,
+			final int count, final boolean reversed) {
+		Map<String, String> results = new TreeMap<String, String>();
 
 		RangeSlicesQuery<String, String, String> sliceQuery = HFactory.createRangeSlicesQuery(	getKeyspace(),
 																								SE,
 																								SE,
 																								SE);
 		sliceQuery.setColumnFamily(columnFamily)
-					.setRange(startColumn, null, false, count)
+					.setRange(startColumn, null, reversed, count)
 					.setKeys(key, key)
 					.setRowCount(1);
 
@@ -307,10 +312,10 @@ public class CassandraService {
 	 * @param columnFamily
 	 * @return
 	 */
-	public HashMap<String, String> readSubColumns(final String key,
+	public Map<String, String> readSubColumns(final String key,
 			final String[] columns, final String superColumn,
 			final String columnFamily) {
-		HashMap<String, String> results = new HashMap<String, String>();
+		Map<String, String> results = new TreeMap<String, String>();
 
 		SubSliceQuery<String, String, String, String> subSliceQuery = HFactory.createSubSliceQuery(	getKeyspace(),
 																									SE,
@@ -345,9 +350,9 @@ public class CassandraService {
 	 * @param columnFamily
 	 * @return
 	 */
-	public HashMap<String, String> readSuperColumns(final String key,
+	public Map<String, String> readSuperColumns(final String key,
 			final String superColumn, final String columnFamily) {
-		HashMap<String, String> results = new HashMap<String, String>();
+		Map<String, String> results = new TreeMap<String, String>();
 
 		SuperColumnQuery<String, String, String, String> superColumnQuery = HFactory.createSuperColumnQuery(getKeyspace(),
 																											SE,
