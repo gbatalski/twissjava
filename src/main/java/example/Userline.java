@@ -163,13 +163,13 @@ public class Userline extends HomePage {
 
 																@Override
 																public Date getObject() {
-																	return new Date(listitem.getModel()
-																							.getObject()
-																							.getTimestamp());
+																return new Date(listitem.getModel()
+																						.getObject()
+																						.getTimestamp());
 
 																}
 														},
-														"SS"));
+														"FF"));
                 }
             }).setVersioned(false);
             Long linktopaginate = timeline.getNextview();
