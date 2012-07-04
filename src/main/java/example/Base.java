@@ -65,6 +65,8 @@ public abstract class Base extends WebPage {
 
 	public final static String USERLINE = "Userline";
 
+	public final static String PUBLIC = "!PUBLIC!";
+
 	@Inject
 	public transient CassandraService cassandra;
 
@@ -326,14 +328,14 @@ public abstract class Base extends WebPage {
 								USERLINE,
 								createStringColumn(	String.valueOf(timestamp),
 													key))
-				.addInsertion(	"!PUBLIC!",
+				.addInsertion(	PUBLIC,
 								USERLINE,
 								createStringColumn(	String.valueOf(timestamp),
 													key))
 				.addCounter(tweet.getUname(),
 							MISC_COUNTS,
 							HFactory.createCounterColumn("tweets", 1))
-				.addCounter("!PUBLIC!",
+				.addCounter(PUBLIC,
 							MISC_COUNTS,
 							HFactory.createCounterColumn("tweets", 1));
 

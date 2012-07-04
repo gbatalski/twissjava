@@ -34,7 +34,7 @@ public class Publicline extends HomePage {
         nextpage = parameters.get("nextpage").toLong(0);
         username = parameters.get("username").toString();
         if (username == null) {
-            username = "!PUBLIC!";
+			username = PUBLIC;
             add(new Label("h2name", "Public"));
 
         }
