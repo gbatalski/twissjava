@@ -11,6 +11,7 @@ import java.io.File;
 import java.security.Permission;
 
 import org.apache.cassandra.cli.CliMain;
+import org.apache.log4j.Logger;
 
 import com.google.common.io.Files;
 import com.google.inject.Inject;
@@ -37,6 +38,7 @@ public class SchemaUtils {
 
 	private final int replicationFactor;
 
+	private static final Logger LOG = Logger.getLogger(SchemaUtils.class);
 
 	@Inject
 	public SchemaUtils(@Host String host, @Port Integer port,
@@ -90,7 +92,8 @@ public class SchemaUtils {
 					content.replaceAll("(replication_factor\\s*:)\\s*\\d", "$1"
 							+ replicationFactor);
 					write(content, f, UTF_8);
-					
+					LOG.info("Replication factor " + replicationFactor);
+					LOG.info("Create or update schema with " + content);
 					CliMain.main(new String[] { "-h", host, "-p",
 							port.toString(), "-f", f.getAbsolutePath() });
 					f.delete();

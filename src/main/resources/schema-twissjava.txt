@@ -9,8 +9,10 @@ client and typing "help;"
 */
 
 create keyspace Twissjava
-    with strategy_options={replication_factor:1}
+    with strategy_options = {replication_factor:1}
     and placement_strategy = 'org.apache.cassandra.locator.SimpleStrategy';
+
+update keyspace Twissjava with strategy_options = {replication_factor:1};
 
 use Twissjava;
 
